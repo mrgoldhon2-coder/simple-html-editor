@@ -53,9 +53,11 @@ const SearchableDropdown = ({
     opt.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Синхронизируем внутренний inputValue с внешним value
+  // Синхронизируем внутренний inputValue с внешним value только когда не в режиме редактирования
   useEffect(() => {
-    setInputValue(value);
+    if (!isOpen && !search) {
+      setInputValue(value);
+    }
   }, [value]);
 
   useEffect(() => {
@@ -95,13 +97,20 @@ const SearchableDropdown = ({
 
   const handleBlur = () => {
     setTimeout(() => {
+      // Если поле пустое или это search mode, просто закрываем
+      if (search) {
+        setSearch('');
+        setIsOpen(false);
+        return;
+      }
+      
       if (allowCustom && inputValue) {
         onChange(inputValue);
-      } else if (!options.includes(inputValue)) {
+      } else if (inputValue && !options.includes(inputValue)) {
+        // Возвращаем к последнему валидному значению только если текущее невалидно
         setInputValue(value);
       }
       setIsOpen(false);
-      setSearch('');
     }, 200);
   };
 
