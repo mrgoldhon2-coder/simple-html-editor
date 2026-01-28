@@ -53,7 +53,7 @@ const SearchableDropdown = ({
   );
 
   useEffect(() => {
-    if (filtered.length === 1 && search) {
+    if (filtered.length === 1 && search.length >= 5) {
       onChange(filtered[0]);
       setInputValue(filtered[0]);
       setSearch('');
@@ -103,13 +103,13 @@ const SearchableDropdown = ({
         className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 focus:border-[#FDB913] focus:outline-none transition"
       />
       {isOpen && filtered.length > 0 && (
-        <div className="absolute z-10 w-full mt-2 bg-[#0f1419] border border-[#2a3040] rounded-xl max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-60 overflow-y-auto">
           {filtered.map((opt, i) => (
             <button
               key={i}
               type="button"
               onMouseDown={() => handleSelect(opt)}
-              className="w-full text-left px-4 py-3 hover:bg-[#1e2430] transition text-sm"
+              className="w-full text-left px-4 py-3 hover:bg-[#2a3040] transition text-sm border-b border-[#2a3040] last:border-b-0"
             >
               {opt}
             </button>
