@@ -241,29 +241,48 @@ const HomePage = () => {
 };
 
 const SellPage = () => {
-  const [network, setNetwork] = useState('');
-  const [asset, setAsset] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('');
+  const networks = ['TON (The Open Network)', 'Tron (TRC20)', 'Ethereum (ERC20)', 'BSC (BEP20)'];
+  const assetsForNetwork: Record<string, string[]> = {
+    'TON (The Open Network)': ['USDT', 'TON'],
+    'Tron (TRC20)': ['USDT'],
+    'Ethereum (ERC20)': ['USDT'],
+    'BSC (BEP20)': ['USDT']
+  };
+  const paymentMethods = ['СБП', 'Банковская карта', 'ЮМани', 'Пополнение мобильного телефона'];
+  const banks = ['Сбербанк', 'Т-Банк', 'Альфа-Банк', 'ВТБ', 'Газпромбанк', 'Райффайзенбанк', 'Совкомбанк', 'Открытие', 'Росбанк', 'МТС Банк', 'Яндекс Банк', 'Озон Банк'];
+
+  const [network, setNetwork] = useState('TON (The Open Network)');
+  const [asset, setAsset] = useState('USDT');
+  const [paymentMethod, setPaymentMethod] = useState('СБП');
   const [amount, setAmount] = useState('');
   const [paymentDetails, setPaymentDetails] = useState('');
   const [bank, setBank] = useState('');
 
-  const networks = ['TON', 'TRC20'];
-  const availableAssets = network === 'TON' ? ['TON', 'USDT'] : network === 'TRC20' ? ['USDT'] : [];
-  const paymentMethods = ['СБП', 'Банковская карта', 'Наличные'];
-  const banks = ['Сбербанк', 'Тинькофф', 'Альфа-Банк', 'ВТБ', 'Райффайзен', 'Газпромбанк', 'Открытие', 'Совкомбанк', 'Россельхозбанк', 'МКБ', 'Промсвязьбанк', 'Ак Барс', 'Уралсиб', 'Росбанк', 'Хоум Кредит'];
+  const availableAssets = assetsForNetwork[network] || ['USDT'];
 
-  const getFieldConfig = () => {
+  useEffect(() => {
+    if (!availableAssets.includes(asset)) {
+      setAsset(availableAssets[0]);
+    }
+  }, [network, availableAssets, asset]);
+
+  const getPaymentFieldConfig = () => {
     switch(paymentMethod) {
-      case 'СБП': return { label: 'Номер телефона', type: 'tel', placeholder: '+7 (999) 123-45-67' };
-      case 'Банковская карта': return { label: 'Номер карты', type: 'text', placeholder: '0000 0000 0000 0000' };
-      case 'Наличные': return { label: 'Город встречи', type: 'text', placeholder: 'Введите город' };
-      default: return { label: 'Реквизиты', type: 'text', placeholder: 'Введите реквизиты' };
+      case 'СБП':
+        return { label: 'Номер телефона', placeholder: '+7 (___) ___-__-__', type: 'tel' };
+      case 'Банковская карта':
+        return { label: 'Номер карты', placeholder: '0000 0000 0000 0000', type: 'text' };
+      case 'ЮМани':
+        return { label: 'Номер телефона/карты/счёта', placeholder: 'Телефон, карта или номер счёта', type: 'text' };
+      case 'Пополнение мобильного телефона':
+        return { label: 'Номер телефона', placeholder: '+7 (___) ___-__-__', type: 'tel' };
+      default:
+        return { label: 'Реквизиты', placeholder: 'Введите реквизиты', type: 'text' };
     }
   };
 
-  const fieldConfig = getFieldConfig();
-  const showBankField = paymentMethod === 'СБП' || paymentMethod === 'Банковская карта';
+  const fieldConfig = getPaymentFieldConfig();
+  const showBankField = paymentMethod === 'СБП';
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
