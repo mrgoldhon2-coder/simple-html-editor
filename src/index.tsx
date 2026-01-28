@@ -264,7 +264,7 @@ const SellPage = () => {
     if (!availableAssets.includes(asset)) {
       setAsset(availableAssets[0]);
     }
-  }, [network, availableAssets, asset]);
+  }, [network]);
 
   const getPaymentFieldConfig = () => {
     switch(paymentMethod) {
