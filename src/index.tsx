@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import "./index.css";
+import { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
 const PAGES = ['home', 'sell', 'profile', 'rewards', 'auth'] as const;
@@ -310,7 +311,4 @@ const AuthPage = () => {
   );
 };
 
-const root = document.getElementById('root');
-if (root) {
-  createRoot(root).render(<App />);
-}
+createRoot(document.getElementById('root')!).render(<App />);
