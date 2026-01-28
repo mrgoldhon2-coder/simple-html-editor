@@ -32,7 +32,7 @@ const App = () => {
 const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) => {
   return (
     <nav className="fixed top-0 w-full bg-black border-b border-[#1a1f26] z-50">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 bg-[#FDB913] rounded-lg flex items-center justify-center text-black font-bold text-sm">
             P2P
@@ -55,7 +55,7 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
 
 const HomePage = () => {
   return (
-    <div className="max-w-7xl mx-auto px-6 py-20">
+    <div className="max-w-6xl mx-auto px-6 py-20">
       <div className="text-center mb-32">
         <h1 className="text-5xl font-bold mb-6">
           Продавайте криптовалюту <span className="text-[#FDB913]">быстро и выгодно</span>
@@ -99,8 +99,8 @@ const SellPage = () => {
   const [amount, setAmount] = useState('');
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-12">
-      <div className="bg-[#0f1419] rounded-2xl p-8 border border-[#1e2430]">
+    <div className="max-w-6xl mx-auto px-6 py-12">
+      <div className="bg-[#0f1419] rounded-2xl p-8 border border-[#1e2430] max-w-2xl mx-auto">
         <h2 className="text-2xl font-bold mb-8">Продать криптовалюту</h2>
 
         <div className="space-y-6">
@@ -212,7 +212,7 @@ const ProfilePage = () => {
 
 const RewardsPage = () => {
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
+    <div className="max-w-6xl mx-auto px-6 py-12">
       <h1 className="text-3xl font-bold mb-8">Награды</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -260,8 +260,8 @@ const AuthPage = () => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
 
   return (
-    <div className="max-w-md mx-auto px-6 py-20">
-      <div className="bg-[#0f1419] rounded-2xl border border-[#1e2430] p-8">
+    <div className="max-w-6xl mx-auto px-6 py-20">
+      <div className="bg-[#0f1419] rounded-2xl border border-[#1e2430] p-8 max-w-md mx-auto">
         <div className="bg-[#0f1419] rounded-xl p-2 flex gap-2 mb-8">
           {(['login', 'register'] as const).map(m => (
             <button key={m} onClick={() => setMode(m)} className={`flex-1 py-3 rounded-lg text-sm font-medium transition ${mode === m ? 'bg-[#1e2430] text-white' : 'text-[#6B7280] hover:text-white'}`}>
