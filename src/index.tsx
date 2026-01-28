@@ -1,5 +1,5 @@
 import "./index.css";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 
 const PAGES = ['home', 'sell', 'profile', 'rewards', 'auth'] as const;
@@ -47,6 +47,7 @@ const SearchableDropdown = ({
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [inputValue, setInputValue] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const filtered = options.filter(opt => 
     opt.toLowerCase().includes(search.toLowerCase())
@@ -58,6 +59,8 @@ const SearchableDropdown = ({
       setInputValue(filtered[0]);
       setSearch('');
       setIsOpen(false);
+      // Снимаем фокус с поля ввода
+      inputRef.current?.blur();
     }
   }, [filtered, search]);
 
@@ -100,6 +103,7 @@ const SearchableDropdown = ({
   return (
     <div className="relative">
       <input
+        ref={inputRef}
         type="text"
         value={search || inputValue}
         onChange={e => handleInputChange(e.target.value)}
@@ -197,17 +201,37 @@ const HomePage = () => {
         <h2 className="text-2xl sm:text-3xl font-bold text-center mb-12 sm:mb-16">Как это работает</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
           {[
-            { icon: '💳', title: 'Создайте заявку', desc: 'Укажите сумму и реквизиты для получения рублей' },
-            { icon: '✈️', title: 'Отправьте крипту', desc: 'Переведите криптовалюту на указанный кошелёк' },
-            { icon: '💰', title: 'Получите рубли', desc: 'Деньги поступят на вашу карту или СБП' },
-            { icon: '✓', title: 'Готово!', desc: 'Сохраните чек для подтверждения' }
-          ].map((step, i) => (
-            <div key={i} className="text-center">
-              <div className="w-16 h-16 bg-[#FDB913] rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
-                {step.icon}
+            { num: '1', title: 'Выберите актив', desc: 'TON или USDT', icon: '💰' },
+            { num: '2', title: 'Укажите сумму', desc: 'И реквизиты', icon: '✍️' },
+            { num: '3', title: 'Отправьте крипту', desc: 'По адресу', icon: '📤' },
+            { num: '4', title: 'Получите деньги', desc: 'За 1-5 минут', icon: '✅' }
+          ].map((step) => (
+            <div key={step.num} className="text-center">
+              <div className="w-14 sm:w-16 h-14 sm:h-16 bg-[#FDB913] rounded-full flex items-center justify-center text-black font-bold text-lg sm:text-xl mx-auto mb-4 sm:mb-6">
+                {step.num}
               </div>
-              <h3 className="text-base sm:text-lg font-semibold mb-2">{step.title}</h3>
-              <p className="text-sm text-[#9CA3AF]">{step.desc}</p>
+              <h3 className="font-semibold mb-2 text-sm sm:text-base">{step.title}</h3>
+              <p className="text-xs sm:text-sm text-[#6B7280]">{step.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-[#0f1419] border border-[#1e2430] rounded-2xl p-6 sm:p-10">
+        <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8">Преимущества</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-6">
+          {[
+            { icon: '⚡', title: 'Быстро', desc: 'Выплаты за 1-5 минут' },
+            { icon: '💎', title: 'Выгодно', desc: 'Лучшие курсы обмена' },
+            { icon: '🔒', title: 'Безопасно', desc: 'Проверенный сервис' },
+            { icon: '🎁', title: 'Бонусы', desc: 'Кэшбэк за сделки' },
+            { icon: '🌐', title: 'TON & USDT', desc: 'Популярные активы' },
+            { icon: '📱', title: 'Удобно', desc: 'Простой интерфейс' }
+          ].map((item, i) => (
+            <div key={i} className="text-center p-4 sm:p-6 bg-[#1a1f26] rounded-xl border border-[#2a3040] hover:border-[#FDB913] transition">
+              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">{item.icon}</div>
+              <h3 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">{item.title}</h3>
+              <p className="text-xs sm:text-sm text-[#6B7280]">{item.desc}</p>
             </div>
           ))}
         </div>
@@ -217,55 +241,37 @@ const HomePage = () => {
 };
 
 const SellPage = () => {
-  const networks = ['TON', 'Tron (TRC20)', 'Ethereum (ERC20)', 'BSC (BEP20)'];
-  const assetsForNetwork: Record<string, string[]> = {
-    'TON': ['USDT', 'TON'],
-    'Tron (TRC20)': ['USDT'],
-    'Ethereum (ERC20)': ['USDT'],
-    'BSC (BEP20)': ['USDT']
-  };
-  const paymentMethods = ['СБП', 'Банковская карта', 'ЮМани', 'Пополнение мобильного телефона'];
-  const banks = ['Сбербанк', 'Т-Банк', 'Альфа-Банк', 'ВТБ', 'Газпромбанк', 'Райффайзенбанк', 'Совкомбанк', 'Открытие', 'Росбанк', 'МТС Банк', 'Яндекс Банк', 'Озон Банк'];
-
-  const [network, setNetwork] = useState('TON');
-  const [asset, setAsset] = useState('USDT');
-  const [paymentMethod, setPaymentMethod] = useState('СБП');
+  const [network, setNetwork] = useState('');
+  const [asset, setAsset] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
   const [amount, setAmount] = useState('');
   const [paymentDetails, setPaymentDetails] = useState('');
   const [bank, setBank] = useState('');
 
-  const availableAssets = assetsForNetwork[network] || ['USDT'];
+  const networks = ['TON', 'TRC20'];
+  const availableAssets = network === 'TON' ? ['TON', 'USDT'] : network === 'TRC20' ? ['USDT'] : [];
+  const paymentMethods = ['СБП', 'Банковская карта', 'Наличные'];
+  const banks = ['Сбербанк', 'Тинькофф', 'Альфа-Банк', 'ВТБ', 'Райффайзен', 'Газпромбанк', 'Открытие', 'Совкомбанк', 'Россельхозбанк', 'МКБ', 'Промсвязьбанк', 'Ак Барс', 'Уралсиб', 'Росбанк', 'Хоум Кредит'];
 
-  useEffect(() => {
-    if (!availableAssets.includes(asset)) {
-      setAsset(availableAssets[0]);
-    }
-  }, [network]);
-
-  const getPaymentFieldConfig = () => {
+  const getFieldConfig = () => {
     switch(paymentMethod) {
-      case 'СБП':
-        return { label: 'Номер телефона', placeholder: '+7 (___) ___-__-__', type: 'tel' };
-      case 'Банковская карта':
-        return { label: 'Номер карты', placeholder: '0000 0000 0000 0000', type: 'text' };
-      case 'ЮМани':
-        return { label: 'Номер телефона/карты/счёта', placeholder: 'Телефон, карта или номер счёта', type: 'text' };
-      case 'Пополнение мобильного телефона':
-        return { label: 'Номер телефона', placeholder: '+7 (___) ___-__-__', type: 'tel' };
-      default:
-        return { label: 'Реквизиты', placeholder: 'Введите реквизиты', type: 'text' };
+      case 'СБП': return { label: 'Номер телефона', type: 'tel', placeholder: '+7 (999) 123-45-67' };
+      case 'Банковская карта': return { label: 'Номер карты', type: 'text', placeholder: '0000 0000 0000 0000' };
+      case 'Наличные': return { label: 'Город встречи', type: 'text', placeholder: 'Введите город' };
+      default: return { label: 'Реквизиты', type: 'text', placeholder: 'Введите реквизиты' };
     }
   };
 
-  const fieldConfig = getPaymentFieldConfig();
-  const showBankField = paymentMethod === 'СБП';
+  const fieldConfig = getFieldConfig();
+  const showBankField = paymentMethod === 'СБП' || paymentMethod === 'Банковская карта';
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
       <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">Продать криптовалюту</h1>
-
-      <div className="bg-[#0f1419] rounded-2xl p-6 sm:p-8 border border-[#1e2430]">
-        <div className="space-y-6">
+      
+      <div className="bg-[#0f1419] border border-[#1e2430] rounded-2xl p-6 sm:p-8">
+        {/* Первая строка: Сеть + Актив + Способ оплаты */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <label className="text-sm font-medium mb-3 block">Сеть</label>
             <SearchableDropdown
@@ -295,7 +301,10 @@ const SellPage = () => {
               placeholder="Выберите способ оплаты"
             />
           </div>
+        </div>
 
+        {/* Вторая строка: Сумма + Детали платежа + Банк (если нужен) */}
+        <div className={`grid grid-cols-1 ${showBankField ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6 mb-6`}>
           <div>
             <label className="text-sm font-medium mb-3 block">Сумма {asset}</label>
             <input 
@@ -330,8 +339,11 @@ const SellPage = () => {
               />
             </div>
           )}
+        </div>
 
-          <button className="w-full bg-[#C89000] text-white py-4 rounded-xl font-semibold hover:bg-[#B8860B] transition">
+        {/* Кнопка центрирована и имеет фиксированную максимальную ширину */}
+        <div className="flex justify-center">
+          <button className="w-full md:w-96 bg-[#C89000] text-white py-4 rounded-xl font-semibold hover:bg-[#B8860B] transition">
             Создать заявку
           </button>
         </div>
