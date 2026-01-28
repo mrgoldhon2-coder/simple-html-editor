@@ -12,15 +12,15 @@ const GlobalStyles = () => (
       scrollbar-color: #374151 #0a0a0a;
     }
     *::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+      width: 16px;
+      height: 16px;
     }
     *::-webkit-scrollbar-track {
       background: #0a0a0a;
     }
     *::-webkit-scrollbar-thumb {
       background: #374151;
-      border-radius: 4px;
+      border-radius: 8px;
     }
     *::-webkit-scrollbar-thumb:hover {
       background: #4B5563;
@@ -30,6 +30,95 @@ const GlobalStyles = () => (
     }
   `}</style>
 );
+
+const SearchableDropdown = ({ 
+  value, 
+  onChange, 
+  options, 
+  placeholder = 'Выберите...', 
+  allowCustom = false 
+}: { 
+  value: string; 
+  onChange: (val: string) => void; 
+  options: string[]; 
+  placeholder?: string;
+  allowCustom?: boolean;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [inputValue, setInputValue] = useState(value);
+
+  const filtered = options.filter(opt => 
+    opt.toLowerCase().includes(search.toLowerCase())
+  );
+
+  useEffect(() => {
+    if (filtered.length === 1 && search) {
+      onChange(filtered[0]);
+      setInputValue(filtered[0]);
+      setSearch('');
+      setIsOpen(false);
+    }
+  }, [filtered, search]);
+
+  const handleInputChange = (val: string) => {
+    setSearch(val);
+    setInputValue(val);
+    setIsOpen(true);
+    
+    if (!allowCustom) {
+      const match = options.find(opt => opt.toLowerCase().includes(val.toLowerCase()));
+      if (!match && val) return;
+    }
+  };
+
+  const handleSelect = (opt: string) => {
+    onChange(opt);
+    setInputValue(opt);
+    setSearch('');
+    setIsOpen(false);
+  };
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      if (allowCustom && inputValue) {
+        onChange(inputValue);
+      } else if (!options.includes(inputValue)) {
+        setInputValue(value);
+      }
+      setIsOpen(false);
+      setSearch('');
+    }, 200);
+  };
+
+  return (
+    <div className="relative">
+      <input
+        type="text"
+        value={search || inputValue}
+        onChange={e => handleInputChange(e.target.value)}
+        onFocus={() => setIsOpen(true)}
+        onBlur={handleBlur}
+        placeholder={placeholder}
+        className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 focus:border-[#FDB913] focus:outline-none transition"
+      />
+      {isOpen && filtered.length > 0 && (
+        <div className="absolute z-10 w-full mt-2 bg-[#0f1419] border border-[#2a3040] rounded-xl max-h-60 overflow-y-auto">
+          {filtered.map((opt, i) => (
+            <button
+              key={i}
+              type="button"
+              onMouseDown={() => handleSelect(opt)}
+              className="w-full text-left px-4 py-3 hover:bg-[#1e2430] transition text-sm"
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const App = () => {
   const [page, setPage] = useState<Page>(() => {
@@ -122,77 +211,104 @@ const HomePage = () => {
 };
 
 const SellPage = () => {
+  const networks = ['TON', 'Tron (TRC20)', 'Ethereum (ERC20)', 'BSC (BEP20)'];
+  const assetsForNetwork: Record<string, string[]> = {
+    'TON': ['USDT', 'TON'],
+    'Tron (TRC20)': ['USDT'],
+    'Ethereum (ERC20)': ['USDT'],
+    'BSC (BEP20)': ['USDT']
+  };
+  const paymentMethods = ['СБП', 'Банковская карта', 'ЮМани', 'Пополнение мобильного телефона'];
+  const banks = ['Сбербанк', 'Т-Банк', 'Альфа-Банк', 'ВТБ', 'Газпромбанк', 'Райффайзенбанк', 'Совкомбанк', 'Открытие', 'Росбанк', 'МТС Банк', 'Яндекс Банк', 'Озон Банк'];
+
   const [network, setNetwork] = useState('TON');
   const [asset, setAsset] = useState('USDT');
-  const [paymentMethod, setPaymentMethod] = useState('sbp');
+  const [paymentMethod, setPaymentMethod] = useState('СБП');
   const [amount, setAmount] = useState('');
+  const [phone, setPhone] = useState('');
+  const [bank, setBank] = useState('');
+
+  const availableAssets = assetsForNetwork[network] || ['USDT'];
+
+  useEffect(() => {
+    if (!availableAssets.includes(asset)) {
+      setAsset(availableAssets[0]);
+    }
+  }, [network]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
       <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">Продать криптовалюту</h1>
 
-      <div className="space-y-6">
-        <div>
-          <label className="text-sm font-medium mb-3 block">Сеть</label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {['TON', 'LOL'].map(n => (
-              <button key={n} onClick={() => setNetwork(n)} className={`p-4 rounded-xl border-2 transition flex items-center gap-3 ${network === n ? 'border-[#FDB913] bg-[#1a1f26]' : 'border-[#2a3040] bg-[#0f1419] hover:bg-[#1e2430]'}`}>
-                <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 ${network === n ? 'border-[#FDB913] bg-[#FDB913]' : 'border-[#374151]'}`}></div>
-                <div className="w-8 h-8 bg-[#0088CC] rounded-full flex-shrink-0"></div>
-                <span className="font-medium text-sm sm:text-base">{n} Network</span>
-              </button>
-            ))}
+      <div className="bg-[#0f1419] rounded-2xl p-6 sm:p-8 border border-[#1e2430]">
+        <div className="space-y-6">
+          <div>
+            <label className="text-sm font-medium mb-3 block">Сеть</label>
+            <SearchableDropdown
+              value={network}
+              onChange={setNetwork}
+              options={networks}
+              placeholder="Выберите сеть"
+            />
           </div>
-        </div>
 
-        <div>
-          <label className="text-sm font-medium mb-3 block">Выберите актив</label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {['USDT', 'TON'].map(a => (
-              <button key={a} onClick={() => setAsset(a)} className={`p-4 rounded-xl border-2 transition flex items-center gap-3 ${asset === a ? 'border-[#FDB913] bg-[#1a1f26]' : 'border-[#2a3040] bg-[#0f1419] hover:bg-[#1e2430]'}`}>
-                <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 ${asset === a ? 'border-[#FDB913] bg-[#FDB913]' : 'border-[#374151]'}`}></div>
-                <div className={`w-8 h-8 rounded-full flex-shrink-0 ${a === 'USDT' ? 'bg-[#26A17B]' : 'bg-[#0088CC]'}`}></div>
-                <span className="font-medium text-sm sm:text-base">{a}</span>
-              </button>
-            ))}
+          <div>
+            <label className="text-sm font-medium mb-3 block">Актив</label>
+            <SearchableDropdown
+              value={asset}
+              onChange={setAsset}
+              options={availableAssets}
+              placeholder="Выберите актив"
+            />
           </div>
-        </div>
 
-        <div>
-          <label className="text-sm font-medium mb-3 block">Способ оплаты</label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[{ id: 'sbp', label: 'СБП', sub: 'По номеру телефона' }, { id: 'card', label: 'Банковская карта', sub: 'Возможна комиссия' }].map(m => (
-              <button key={m.id} onClick={() => setPaymentMethod(m.id)} className={`p-4 rounded-xl border-2 transition text-left ${paymentMethod === m.id ? 'border-[#FDB913] bg-[#1a1f26]' : 'border-[#2a3040] bg-[#0f1419] hover:bg-[#1e2430]'}`}>
-                <div className="font-medium mb-1 text-sm sm:text-base">{m.label}</div>
-                <div className={`text-xs ${m.id === 'card' ? 'text-[#FDB913]' : 'text-[#6B7280]'}`}>{m.sub}</div>
-              </button>
-            ))}
+          <div>
+            <label className="text-sm font-medium mb-3 block">Способ оплаты</label>
+            <SearchableDropdown
+              value={paymentMethod}
+              onChange={setPaymentMethod}
+              options={paymentMethods}
+              placeholder="Выберите способ оплаты"
+            />
           </div>
-        </div>
 
-        <div>
-          <label className="text-sm font-medium mb-3 block">Сумма USDT</label>
-          <input type="text" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 text-lg focus:border-[#FDB913] focus:outline-none transition" />
-        </div>
+          <div>
+            <label className="text-sm font-medium mb-3 block">Сумма USDT</label>
+            <input 
+              type="text" 
+              value={amount} 
+              onChange={e => setAmount(e.target.value)} 
+              placeholder="0.00" 
+              className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 text-lg focus:border-[#FDB913] focus:outline-none transition" 
+            />
+          </div>
 
-        <div>
-          <label className="text-sm font-medium mb-3 block">Номер телефона</label>
-          <input type="tel" placeholder="+7 (___) __-__-__" className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 focus:border-[#FDB913] focus:outline-none transition" />
-        </div>
+          <div>
+            <label className="text-sm font-medium mb-3 block">Номер телефона</label>
+            <input 
+              type="tel" 
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              placeholder="+7 (___) __-__-__" 
+              className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 focus:border-[#FDB913] focus:outline-none transition" 
+            />
+          </div>
 
-        <div>
-          <label className="text-sm font-medium mb-3 block">Банк получателя</label>
-          <select className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 focus:border-[#FDB913] focus:outline-none transition">
-            <option>Введите название банка</option>
-            <option>Сбербанк</option>
-            <option>Т-Банк</option>
-            <option>Альфа-Банк</option>
-          </select>
-        </div>
+          <div>
+            <label className="text-sm font-medium mb-3 block">Банк получателя</label>
+            <SearchableDropdown
+              value={bank}
+              onChange={setBank}
+              options={banks}
+              placeholder="Введите название банка"
+              allowCustom={true}
+            />
+          </div>
 
-        <button className="w-full bg-[#C89000] text-white py-4 rounded-xl font-semibold hover:bg-[#B8860B] transition">
-          Создать заявку
-        </button>
+          <button className="w-full bg-[#C89000] text-white py-4 rounded-xl font-semibold hover:bg-[#B8860B] transition">
+            Создать заявку
+          </button>
+        </div>
       </div>
     </div>
   );
