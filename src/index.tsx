@@ -5,6 +5,32 @@ import { createRoot } from 'react-dom/client';
 const PAGES = ['home', 'sell', 'profile', 'rewards', 'auth'] as const;
 type Page = typeof PAGES[number];
 
+const GlobalStyles = () => (
+  <style>{`
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #374151 #0a0a0a;
+    }
+    *::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    *::-webkit-scrollbar-track {
+      background: #0a0a0a;
+    }
+    *::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 4px;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+      background: #4B5563;
+    }
+    html {
+      overflow-y: scroll;
+    }
+  `}</style>
+);
+
 const App = () => {
   const [page, setPage] = useState<Page>(() => {
     const saved = localStorage.getItem('currentPage');
@@ -16,16 +42,19 @@ const App = () => {
   }, [page]);
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <Navbar page={page} setPage={setPage} />
-      <main className="pt-20">
-        {page === 'home' && <HomePage />}
-        {page === 'sell' && <SellPage />}
-        {page === 'profile' && <ProfilePage />}
-        {page === 'rewards' && <RewardsPage />}
-        {page === 'auth' && <AuthPage />}
-      </main>
-    </div>
+    <>
+      <GlobalStyles />
+      <div className="min-h-screen bg-black text-white">
+        <Navbar page={page} setPage={setPage} />
+        <main className="pt-20">
+          {page === 'home' && <HomePage />}
+          {page === 'sell' && <SellPage />}
+          {page === 'profile' && <ProfilePage />}
+          {page === 'rewards' && <RewardsPage />}
+          {page === 'auth' && <AuthPage />}
+        </main>
+      </div>
+    </>
   );
 };
 
@@ -42,7 +71,7 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
         <div className="hidden md:flex items-center gap-6">
           <button onClick={() => setPage('home')} className={`text-sm font-medium transition ${page === 'home' ? 'text-[#FDB913]' : 'text-[#9CA3AF] hover:text-white'}`}>Главная</button>
           <button onClick={() => setPage('sell')} className={`text-sm font-medium transition ${page === 'sell' ? 'text-[#FDB913]' : 'text-[#9CA3AF] hover:text-white'}`}>Продать</button>
-          <button onClick={() => setPage('profile')} className={`text-sm font-medium transition ${page === 'profile' ? 'text-[#FDB913]' : 'text-[#9CA3AF] hover:text-white'}`}>Профиль</button>
+          <button onClick={() => setPage('profile')} className={`text-sm font-medium transition ${page === 'profile' ? 'text-[#FDB913]' : 'text-[#9CA3AF] hover:text-white'}`}>Заявки</button>
           <button onClick={() => setPage('rewards')} className={`text-sm font-medium transition ${page === 'rewards' ? 'text-[#FDB913]' : 'text-[#9CA3AF] hover:text-white'}`}>Награды</button>
         </div>
         <button onClick={() => setPage('auth')} className="bg-[#FDB913] text-black px-4 sm:px-6 py-2 rounded-lg text-sm font-semibold hover:bg-[#E5A712] transition">
@@ -99,7 +128,7 @@ const SellPage = () => {
   const [amount, setAmount] = useState('');
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-12">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
       <div className="bg-[#0f1419] rounded-2xl p-6 md:p-8 border border-[#1e2430]">
         <h2 className="text-2xl font-bold mb-8">Продать криптовалюту</h2>
 
