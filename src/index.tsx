@@ -53,7 +53,7 @@ const SearchableDropdown = ({
   );
 
   useEffect(() => {
-    if (filtered.length === 1 && search.length >= 5) {
+    if (filtered.length === 1 && search.length >= 3) {
       onChange(filtered[0]);
       setInputValue(filtered[0]);
       setSearch('');
@@ -70,6 +70,12 @@ const SearchableDropdown = ({
       const match = options.find(opt => opt.toLowerCase().includes(val.toLowerCase()));
       if (!match && val) return;
     }
+  };
+
+  const handleFocus = () => {
+    setSearch('');
+    setInputValue('');
+    setIsOpen(true);
   };
 
   const handleSelect = (opt: string) => {
@@ -97,7 +103,7 @@ const SearchableDropdown = ({
         type="text"
         value={search || inputValue}
         onChange={e => handleInputChange(e.target.value)}
-        onFocus={() => setIsOpen(true)}
+        onFocus={handleFocus}
         onBlur={handleBlur}
         placeholder={placeholder}
         className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 focus:border-[#FDB913] focus:outline-none transition"
@@ -225,7 +231,7 @@ const SellPage = () => {
   const [asset, setAsset] = useState('USDT');
   const [paymentMethod, setPaymentMethod] = useState('СБП');
   const [amount, setAmount] = useState('');
-  const [phone, setPhone] = useState('');
+  const [paymentDetails, setPaymentDetails] = useState('');
   const [bank, setBank] = useState('');
 
   const availableAssets = assetsForNetwork[network] || ['USDT'];
@@ -235,6 +241,24 @@ const SellPage = () => {
       setAsset(availableAssets[0]);
     }
   }, [network]);
+
+  const getPaymentFieldConfig = () => {
+    switch(paymentMethod) {
+      case 'СБП':
+        return { label: 'Номер телефона', placeholder: '+7 (___) ___-__-__', type: 'tel' };
+      case 'Банковская карта':
+        return { label: 'Номер карты', placeholder: '0000 0000 0000 0000', type: 'text' };
+      case 'ЮМани':
+        return { label: 'Номер телефона/карты/счёта', placeholder: 'Телефон, карта или номер счёта', type: 'text' };
+      case 'Пополнение мобильного телефона':
+        return { label: 'Номер телефона', placeholder: '+7 (___) ___-__-__', type: 'tel' };
+      default:
+        return { label: 'Реквизиты', placeholder: 'Введите реквизиты', type: 'text' };
+    }
+  };
+
+  const fieldConfig = getPaymentFieldConfig();
+  const showBankField = paymentMethod === 'СБП';
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
@@ -273,7 +297,7 @@ const SellPage = () => {
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-3 block">Сумма USDT</label>
+            <label className="text-sm font-medium mb-3 block">Сумма {asset}</label>
             <input 
               type="text" 
               value={amount} 
@@ -284,26 +308,28 @@ const SellPage = () => {
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-3 block">Номер телефона</label>
+            <label className="text-sm font-medium mb-3 block">{fieldConfig.label}</label>
             <input 
-              type="tel" 
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-              placeholder="+7 (___) __-__-__" 
+              type={fieldConfig.type} 
+              value={paymentDetails}
+              onChange={e => setPaymentDetails(e.target.value)}
+              placeholder={fieldConfig.placeholder}
               className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 focus:border-[#FDB913] focus:outline-none transition" 
             />
           </div>
 
-          <div>
-            <label className="text-sm font-medium mb-3 block">Банк получателя</label>
-            <SearchableDropdown
-              value={bank}
-              onChange={setBank}
-              options={banks}
-              placeholder="Введите название банка"
-              allowCustom={true}
-            />
-          </div>
+          {showBankField && (
+            <div>
+              <label className="text-sm font-medium mb-3 block">Банк получателя</label>
+              <SearchableDropdown
+                value={bank}
+                onChange={setBank}
+                options={banks}
+                placeholder="Введите название банка"
+                allowCustom={true}
+              />
+            </div>
+          )}
 
           <button className="w-full bg-[#C89000] text-white py-4 rounded-xl font-semibold hover:bg-[#B8860B] transition">
             Создать заявку
