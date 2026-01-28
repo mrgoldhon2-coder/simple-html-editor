@@ -53,6 +53,11 @@ const SearchableDropdown = ({
     opt.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Синхронизируем внутренний inputValue с внешним value
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
   useEffect(() => {
     if (filtered.length === 1 && search.length >= 3) {
       onChange(filtered[0]);
