@@ -50,7 +50,7 @@ const SearchableDropdown = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const filtered = options.filter(opt => 
-    opt.toLowerCase().includes(search.toLowerCase())
+    opt.toLowerCase().replace(/-/g, '').includes(search.toLowerCase().replace(/-/g, ''))
   );
 
   // Синхронизируем внутренний inputValue с внешним value только когда не в режиме редактирования
@@ -77,7 +77,9 @@ const SearchableDropdown = ({
     setIsOpen(true);
     
     if (!allowCustom) {
-      const match = options.find(opt => opt.toLowerCase().includes(val.toLowerCase()));
+      const match = options.find(opt => 
+        opt.toLowerCase().replace(/-/g, '').includes(val.toLowerCase().replace(/-/g, ''))
+      );
       if (!match && val) return;
     }
   };
@@ -160,9 +162,9 @@ const App = () => {
       <div className="min-h-screen bg-black text-white">
         <Navbar page={page} setPage={setPage} />
         <main className="pt-20">
-          {page === 'home' && <HomePage />}
+          {page === 'home' && <HomePage setPage={setPage} />}
           {page === 'sell' && <SellPage />}
-          {page === 'profile' && <ProfilePage />}
+          {page === 'profile' && <ProfilePage setPage={setPage} />}
           {page === 'rewards' && <RewardsPage />}
           {page === 'auth' && <AuthPage />}
         </main>
@@ -172,6 +174,8 @@ const App = () => {
 };
 
 const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <nav className="fixed top-0 w-full bg-black border-b border-[#1a1f26] z-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -181,21 +185,70 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
           </div>
           <span className="text-base sm:text-lg font-bold">P2P Express</span>
         </div>
+
+        {/* Desktop меню */}
         <div className="hidden md:flex items-center gap-6">
           <button onClick={() => setPage('home')} className={`text-sm font-medium transition ${page === 'home' ? 'text-[#FDB913]' : 'text-[#9CA3AF] hover:text-white'}`}>Главная</button>
           <button onClick={() => setPage('sell')} className={`text-sm font-medium transition ${page === 'sell' ? 'text-[#FDB913]' : 'text-[#9CA3AF] hover:text-white'}`}>Продать</button>
           <button onClick={() => setPage('profile')} className={`text-sm font-medium transition ${page === 'profile' ? 'text-[#FDB913]' : 'text-[#9CA3AF] hover:text-white'}`}>Заявки</button>
           <button onClick={() => setPage('rewards')} className={`text-sm font-medium transition ${page === 'rewards' ? 'text-[#FDB913]' : 'text-[#9CA3AF] hover:text-white'}`}>Награды</button>
         </div>
-        <button onClick={() => setPage('auth')} className="bg-[#FDB913] text-black px-4 sm:px-6 py-2 rounded-lg text-sm font-semibold hover:bg-[#E5A712] transition">
-          Войти
-        </button>
+
+        <div className="flex items-center gap-3">
+          <button onClick={() => setPage('auth')} className="bg-[#FDB913] text-black px-4 sm:px-6 py-2 rounded-lg text-sm font-semibold hover:bg-[#E5A712] transition">
+            Войти
+          </button>
+
+          {/* Бургер-кнопка для мобильных */}
+          <button 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden w-10 h-10 flex items-center justify-center"
+          >
+            <div className="space-y-1.5">
+              <span className={`block w-6 h-0.5 bg-white transition-transform ${mobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+              <span className={`block w-6 h-0.5 bg-white transition-opacity ${mobileMenuOpen ? 'opacity-0' : ''}`}></span>
+              <span className={`block w-6 h-0.5 bg-white transition-transform ${mobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+            </div>
+          </button>
+        </div>
       </div>
+
+      {/* Мобильное выпадающее меню */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-[#0a0a0a] border-t border-[#1a1f26]">
+          <div className="px-4 py-2 space-y-1">
+            <button 
+              onClick={() => { setPage('home'); setMobileMenuOpen(false); }} 
+              className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition ${page === 'home' ? 'bg-[#1a1f26] text-[#FDB913]' : 'text-[#9CA3AF] hover:bg-[#1a1f26] hover:text-white'}`}
+            >
+              Главная
+            </button>
+            <button 
+              onClick={() => { setPage('sell'); setMobileMenuOpen(false); }} 
+              className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition ${page === 'sell' ? 'bg-[#1a1f26] text-[#FDB913]' : 'text-[#9CA3AF] hover:bg-[#1a1f26] hover:text-white'}`}
+            >
+              Продать
+            </button>
+            <button 
+              onClick={() => { setPage('profile'); setMobileMenuOpen(false); }} 
+              className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition ${page === 'profile' ? 'bg-[#1a1f26] text-[#FDB913]' : 'text-[#9CA3AF] hover:bg-[#1a1f26] hover:text-white'}`}
+            >
+              Заявки
+            </button>
+            <button 
+              onClick={() => { setPage('rewards'); setMobileMenuOpen(false); }} 
+              className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition ${page === 'rewards' ? 'bg-[#1a1f26] text-[#FDB913]' : 'text-[#9CA3AF] hover:bg-[#1a1f26] hover:text-white'}`}
+            >
+              Награды
+            </button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
 
-const HomePage = () => {
+const HomePage = ({ setPage }: { setPage: (p: Page) => void }) => {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
       <div className="text-center mb-20 sm:mb-32">
@@ -205,7 +258,10 @@ const HomePage = () => {
         <p className="text-base sm:text-lg text-[#9CA3AF] mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
           Мгновенный обмен TON и USDT на рубли с лучшим курсом и моментальными выплатами
         </p>
-        <button className="bg-[#FDB913] text-black px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-sm sm:text-base font-semibold hover:bg-[#E5A712] transition inline-flex items-center gap-2">
+        <button 
+          onClick={() => setPage('sell')}
+          className="bg-[#FDB913] text-black px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-sm sm:text-base font-semibold hover:bg-[#E5A712] transition inline-flex items-center gap-2"
+        >
           Продать криптовалюту
           <span>→</span>
         </button>
@@ -385,7 +441,7 @@ const SellPage = () => {
   );
 };
 
-const ProfilePage = () => {
+const ProfilePage = ({ setPage }: { setPage: (p: Page) => void }) => {
   const [tab, setTab] = useState<'all' | 'active' | 'completed'>('all');
 
   return (
@@ -397,7 +453,10 @@ const ProfilePage = () => {
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold">Мои заявки</h1>
-        <button className="bg-[#FDB913] text-black px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl text-sm font-semibold hover:bg-[#E5A712] transition flex items-center gap-2">
+        <button 
+          onClick={() => setPage('sell')}
+          className="bg-[#FDB913] text-black px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl text-sm font-semibold hover:bg-[#E5A712] transition flex items-center gap-2"
+        >
           <span>+</span>
           Создать заявку
         </button>
