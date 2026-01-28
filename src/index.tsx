@@ -197,7 +197,7 @@ const ProfilePage = () => {
         ))}
       </div>
 
-      <div className="bg-[#0f1419] rounded-2xl border border-[#1e2430] p-8 sm:p-12 text-center">
+      <div className="bg-[#0f1419] rounded-2xl p-8 sm:p-12 text-center">
         <div className="w-16 sm:w-20 h-16 sm:h-20 bg-[#1e2430] rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
           <span className="text-3xl sm:text-4xl">📋</span>
         </div>
@@ -261,7 +261,7 @@ const AuthPage = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
-      <div className="bg-[#0f1419] rounded-2xl border border-[#1e2430] p-6 sm:p-8">
+      <div className="max-w-md mx-auto">
         <div className="bg-[#0f1419] rounded-xl p-2 flex gap-2 mb-6 sm:mb-8">
           {(['login', 'register'] as const).map(m => (
             <button key={m} onClick={() => setMode(m)} className={`flex-1 py-3 rounded-lg text-sm font-medium transition ${mode === m ? 'bg-[#1e2430] text-white' : 'text-[#6B7280] hover:text-white'}`}>
@@ -274,11 +274,11 @@ const AuthPage = () => {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Email</label>
-              <input type="email" placeholder="your@email.com" className="w-full bg-[#1a1f26] border border-[#2a3040] rounded-xl px-4 py-3 focus:border-[#FDB913] focus:outline-none transition" />
+              <input type="email" placeholder="your@email.com" className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-3 focus:border-[#FDB913] focus:outline-none transition" />
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Пароль</label>
-              <input type="text" placeholder="Введите пароль" className="w-full bg-[#1a1f26] border border-[#2a3040] rounded-xl px-4 py-3 focus:border-[#FDB913] focus:outline-none transition" />
+              <input type="text" placeholder="Введите пароль" className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-3 focus:border-[#FDB913] focus:outline-none transition" />
             </div>
             <button className="w-full bg-[#FDB913] text-black py-3 rounded-xl font-semibold hover:bg-[#E5A712] transition mt-6">
               Войти
@@ -291,15 +291,15 @@ const AuthPage = () => {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Email</label>
-              <input type="email" placeholder="your@email.com" className="w-full bg-[#1a1f26] border border-[#2a3040] rounded-xl px-4 py-3 focus:border-[#FDB913] focus:outline-none transition" />
+              <input type="email" placeholder="your@email.com" className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-3 focus:border-[#FDB913] focus:outline-none transition" />
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Пароль</label>
-              <input type="text" placeholder="Создайте пароль" className="w-full bg-[#1a1f26] border border-[#2a3040] rounded-xl px-4 py-3 focus:border-[#FDB913] focus:outline-none transition" />
+              <input type="text" placeholder="Создайте пароль" className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-3 focus:border-[#FDB913] focus:outline-none transition" />
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Подтвердите пароль</label>
-              <input type="text" placeholder="Повторите пароль" className="w-full bg-[#1a1f26] border border-[#2a3040] rounded-xl px-4 py-3 focus:border-[#FDB913] focus:outline-none transition" />
+              <input type="text" placeholder="Повторите пароль" className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-3 focus:border-[#FDB913] focus:outline-none transition" />
             </div>
             <button className="w-full bg-[#FDB913] text-black py-3 rounded-xl font-semibold hover:bg-[#E5A712] transition mt-6">
               Зарегистрироваться
