@@ -9,7 +9,7 @@ type Page = typeof PAGES[number];
 
 /**
  * ВЫПАДАЮЩИЙ СПИСОК
- * Исправлено: Динамическое центрирование элемента в области видимости
+ * Исправлено: Центрирование с вертикальным смещением вверх для вмещения всех 5 элементов
  */
 const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выберите...', allowCustom = false, aliases = {} }: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,11 +30,20 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
     if (isOpen && filtered.length > 0) {
       const timer = setTimeout(() => {
         if (dropdownRef.current) {
-          // Используем нативный метод центрирования относительно вьюпорта
+          // Сначала центрируем инпут
           dropdownRef.current.scrollIntoView({ 
             behavior: 'smooth', 
             block: 'center' 
           });
+          
+          // Через мгновение после начала анимации смещаем экран чуть ниже, 
+          // чтобы инпут поднялся выше центра и влезло 5 элементов списка
+          setTimeout(() => {
+            window.scrollBy({
+              top: 120, // Сдвигаем вьюпорт вниз на 120px, поднимая контент выше
+              behavior: 'smooth'
+            });
+          }, 50);
         }
       }, 150);
       return () => clearTimeout(timer);
@@ -70,9 +79,9 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
       {isOpen && (
         <>
           <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={e => e.preventDefault()} />
-          <div className="absolute z-[70] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-60 overflow-y-auto">
+          <div className="absolute z-[70] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-[250px] overflow-y-auto">
             {filtered.length > 0 ? filtered.map((opt: string, i: number) => (
-              <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-3 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0 transition-colors">
+              <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-4 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0 active:bg-[#2a3040]">
                 {opt}
               </button>
             )) : <div className="p-4 text-center text-gray-500 text-sm">Ничего не найдено</div>}
@@ -84,7 +93,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
 };
 
 /**
- * НАВБАР (В потоке страницы, не фиксированный)
+ * НАВБАР
  */
 const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -168,7 +177,7 @@ const SellPage = () => {
   return (
     <div className="page-container py-12">
       <h1 className="text-3xl font-bold mb-8 text-white">{RU.sell.title}</h1>
-      <div className="card-dark space-y-8 p-6 md:p-10 bg-[#11141a] rounded-3xl border border-white/5 shadow-xl">
+      <div className="card-dark space-y-8 p-6 md:p-10 bg-[#11141a] rounded-3xl border border-white/5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div><label className="label">{RU.sell.labels.network}</label><SearchableDropdown value={network} onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} options={networks} aliases={networkAliases} /></div>
           <div><label className="label">{RU.sell.labels.asset}</label><SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network]} /></div>
@@ -179,7 +188,7 @@ const SellPage = () => {
           <div><label className="label">{currentConfig.label}</label><input type="text" placeholder={currentConfig.placeholder} className="input-base" value={details} onChange={e => setDetails(e.target.value)} /></div>
           {method.includes('СБП') && <div><label className="label">{RU.sell.labels.bank}</label><SearchableDropdown value={bank} onChange={setBank} options={RU.sell.banks} allowCustom={true} placeholder={RU.sell.placeholders.bank} /></div>}
         </div>
-        <button onClick={handleCreateOrder} disabled={!isValid || loading} className={`btn-secondary w-full md:w-96 mx-auto h-16 flex items-center justify-center gap-3 font-bold transition-all ${(!isValid || loading) ? 'opacity-30 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}>
+        <button onClick={handleCreateOrder} disabled={!isValid || loading} className={`btn-secondary w-full md:w-96 mx-auto h-16 flex items-center justify-center gap-3 font-bold transition-all ${(!isValid || loading) ? 'opacity-30' : 'hover:scale-105 active:scale-95'}`}>
           {loading ? RU.common.loading : RU.sell.submitBtn}
         </button>
       </div>
@@ -192,7 +201,7 @@ const ProfilePage = () => (
     <h1 className="text-3xl font-bold mb-8 text-white">{RU.profile.title}</h1>
     <div className="flex gap-4 mb-8 overflow-x-auto no-scrollbar pb-2">
       {Object.entries(RU.profile.tabs).map(([k, v]) => (
-        <button key={k} className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${k === 'all' ? 'bg-[#FDB913] text-black font-bold' : 'bg-[#1a1f26] text-white hover:bg-[#222]'}`}>{v}</button>
+        <button key={k} className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap ${k === 'all' ? 'bg-[#FDB913] text-black font-bold' : 'bg-[#1a1f26] text-white'}`}>{v}</button>
       ))}
     </div>
     <div className="p-20 text-center bg-[#1a1f26] rounded-3xl border border-white/5 border-dashed">
@@ -209,14 +218,14 @@ const RewardsPage = () => (
       {RU.rewards.stats.map((s, i) => (
         <div key={i} className="p-8 bg-[#1a1f26] rounded-3xl border border-white/5">
           <div className="text-3xl mb-2">{s.i}</div>
-          <div className="text-sm text-[#6B7280] font-bold uppercase tracking-wider mb-1">{s.l}</div>
+          <div className="text-sm text-[#6B7280] font-bold uppercase mb-1">{s.l}</div>
           <div className="text-2xl font-bold text-white">{s.v}</div>
         </div>
       ))}
     </div>
     <div className="space-y-4">
       {RU.rewards.items.map((item, i) => (
-        <div key={i} className="flex items-center justify-between p-6 bg-[#1a1f26] rounded-2xl border border-white/5 hover:border-[#FDB913]/40 transition-colors">
+        <div key={i} className="flex items-center justify-between p-6 bg-[#1a1f26] rounded-2xl border border-white/5">
           <div>
             <h3 className="font-bold text-white">{item.t}</h3>
             <p className="text-sm text-[#6B7280]">{item.d}</p>
@@ -233,7 +242,7 @@ const App = () => {
   useEffect(() => { localStorage.setItem('currentPage', page); window.scrollTo(0, 0); }, [page]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-[#FDB913] selection:text-black font-sans">
+    <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-[#FDB913] selection:text-black">
       <Navbar page={page} setPage={setPage} />
       
       <main className="pb-24">
@@ -243,19 +252,19 @@ const App = () => {
         {page === 'rewards' && <RewardsPage />}
         {page === 'auth' && (
           <div className="page-container py-12 flex justify-center">
-            <div className="card-dark w-full max-w-md p-10 bg-[#1a1f26] rounded-3xl border border-white/5">
-              <h2 className="text-2xl font-bold mb-8 text-center text-white uppercase tracking-tighter">Login</h2>
+            <div className="card-dark w-full max-w-md p-10 bg-[#1a1f26] rounded-3xl">
+              <h2 className="text-2xl font-bold mb-8 text-center text-white uppercase">Login</h2>
               <div className="space-y-4">
                 <input className="input-base" placeholder="Email" />
                 <input className="input-base" type="password" placeholder="Пароль" />
-                <button className="btn-primary w-full py-4 uppercase font-bold text-black bg-[#FDB913] rounded-xl hover:opacity-90 transition-opacity">Войти</button>
+                <button className="btn-primary w-full py-4 uppercase font-bold text-black bg-[#FDB913] rounded-xl">Войти</button>
               </div>
             </div>
           </div>
         )}
       </main>
       
-      <footer className="py-12 border-t border-[#1a1f26] text-center text-xs text-[#4B5563] bg-black/40">
+      <footer className="py-12 border-t border-[#1a1f26] text-center text-xs text-[#4B5563]">
         <p>© 2026 {RU.common.exchangeName} • {RU.common.saveIncognito}</p>
       </footer>
     </div>
