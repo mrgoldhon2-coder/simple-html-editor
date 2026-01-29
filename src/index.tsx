@@ -8,7 +8,7 @@ const PAGES = ['home', 'sell', 'profile', 'rewards', 'auth'] as const;
 type Page = typeof PAGES[number];
 
 /**
- * ВЫПАДАЮЩИЙ СПИСОК (Исправленный скролл)
+ * ВЫПАДАЮЩИЙ СПИСОК (С исправленным скроллом до последнего элемента)
  */
 const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выберите...', allowCustom = false, aliases = {} }: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,26 +25,17 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
     return o.includes(s) || a;
   });
 
-// Исправленный скролл: всегда доводит до конца списка
   useEffect(() => {
     if (isOpen && filtered.length > 0) {
       const timer = setTimeout(() => {
         if (dropdownRef.current) {
-          // Находим сам список (второй дочерний элемент после инпута)
-          const listElement = dropdownRef.current.querySelector('.max-h-60');
-          if (listElement) {
-            listElement.scrollIntoView({ 
-              behavior: 'auto', 
-              block: 'end', // Доводит нижнюю точку списка до нижнего края экрана
-              inline: 'nearest'
-            });
-            
-            // Если нужно чуть-чуть приподнять над краем, 
-            // можно сделать легкий скролл на 20px вверх после:
-            window.scrollBy(0, 40); 
-          }
+          dropdownRef.current.scrollIntoView({ 
+            behavior: 'auto', 
+            block: 'end' // Доводит до самого низа списка
+          });
+          window.scrollBy(0, 60); // Добавляем запас снизу для 5-го элемента
         }
-      }, 80); // Чуть увеличил задержку для стабильности на мобилках
+      }, 100);
       return () => clearTimeout(timer);
     }
   }, [isOpen, filtered.length]);
@@ -91,11 +82,14 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
   );
 };
 
+/**
+ * НАВБАР (Всегда виден)
+ */
 const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   return (
-    <nav className="fixed top-0 w-full bg-black border-b border-[#1a1f26] z-[100]">
-      <div className="page-container h-16 flex items-center justify-between">
+    <nav className="fixed top-0 left-0 right-0 h-16 bg-black border-b border-[#1a1f26] z-[100] flex items-center">
+      <div className="page-container w-full flex items-center justify-between">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setPage('home')}>
           <div className="logo">P2P</div>
           <span className="font-bold">{RU.common.exchangeName}</span>
@@ -238,16 +232,16 @@ const App = () => {
   useEffect(() => { localStorage.setItem('currentPage', page); window.scrollTo(0, 0); }, [page]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="min-h-screen bg-[#0a0a0a] text-white pt-16">
       <Navbar page={page} setPage={setPage} />
-      <main className="pt-16 pb-20">
+      <main className="pb-20">
         {page === 'home' && <HomePage setPage={setPage} />}
         {page === 'sell' && <SellPage />}
         {page === 'profile' && <ProfilePage />}
         {page === 'rewards' && <RewardsPage />}
         {page === 'auth' && (
           <div className="page-container py-12 flex justify-center">
-            <div className="card-dark w-full max-w-md">
+            <div className="card-dark w-full max-w-md p-10">
               <h2 className="text-2xl font-bold mb-6 text-center">{RU.auth.tabs.login}</h2>
               <input className="input-base mb-4" placeholder="Email" />
               <input className="input-base mb-6" type="password" placeholder="Пароль" />
