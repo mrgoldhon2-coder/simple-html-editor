@@ -49,8 +49,8 @@ const SearchableDropdown = ({
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [inputValue, setInputValue] = useState(value);
-  const [previousValue, setPreviousValue] = useState(value); // Сохраняем предыдущее значение
-  const [autoSelected, setAutoSelected] = useState(false); // Флаг автовыбора
+  const [previousValue, setPreviousValue] = useState(value); 
+  const [autoSelected, setAutoSelected] = useState(false); 
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -58,59 +58,52 @@ const SearchableDropdown = ({
     opt.toLowerCase().replace(/-/g, '').includes(search.toLowerCase().replace(/-/g, ''))
   );
 
-  // Синхронизируем внутренний inputValue с внешним value только когда не в режиме редактирования
   useEffect(() => {
-    if (!isOpen && !search) {
+    if (!isOpen) {
       setInputValue(value);
-      setPreviousValue(value); // Обновляем сохраненное значение
+      setPreviousValue(value);
     }
-  }, [value]);
+  }, [value, isOpen]);
 
   useEffect(() => {
     if (filtered.length === 1 && search.length >= 3) {
-      setAutoSelected(true); // Устанавливаем флаг
-      onChange(filtered[0]);
-      setInputValue(filtered[0]);
-      setPreviousValue(filtered[0]); // Обновляем сохраненное значение
+      const selected = filtered[0];
+      setAutoSelected(true); 
+      setInputValue(selected);
+      setPreviousValue(selected); // Фикс: обновляем старое значение сразу, чтобы blur его не вернул
+      onChange(selected);
       setSearch('');
       setIsOpen(false);
-      // Снимаем фокус с поля ввода
       inputRef.current?.blur();
     }
-  }, [filtered, search]);
+  }, [filtered, search, onChange]);
 
   const handleInputChange = (val: string) => {
     setSearch(val);
     setInputValue(val);
     setIsOpen(true);
-    
-    if (!allowCustom) {
-      const match = options.find(opt => 
-        opt.toLowerCase().replace(/-/g, '').includes(val.toLowerCase().replace(/-/g, ''))
-      );
-      if (!match && val) return;
-    }
+    setAutoSelected(false);
   };
 
   const handleFocus = () => {
-    setPreviousValue(inputValue); // Сохраняем текущее значение перед очисткой
+    setPreviousValue(inputValue);
     setSearch('');
-    setInputValue(''); // Стираем текст
+    setInputValue(''); 
     setIsOpen(true);
-    setAutoSelected(false); // Сбрасываем флаг автовыбора
+    setAutoSelected(false);
   };
 
   const handleSelect = (opt: string) => {
-    onChange(opt);
     setInputValue(opt);
-    setPreviousValue(opt); // Обновляем сохраненное значение
+    setPreviousValue(opt);
+    onChange(opt);
     setSearch('');
     setIsOpen(false);
   };
 
   const handleBlur = () => {
     setTimeout(() => {
-      // Если был автовыбор, просто сбрасываем флаг и выходим
+      // Если сработал автовыбор, ничего не откатываем
       if (autoSelected) {
         setAutoSelected(false);
         setSearch('');
@@ -118,33 +111,20 @@ const SearchableDropdown = ({
         return;
       }
       
-      // Если ничего не выбрано (поле пустое), возвращаем предыдущее значение
+      // Если поле пустое — возвращаем как было
       if (!inputValue) {
         setInputValue(previousValue);
-        setSearch('');
-        setIsOpen(false);
-        return;
-      }
-      
-      // Если в режиме поиска и поле не пустое, возвращаем предыдущее значение
-      if (search && !options.includes(inputValue)) {
+      } 
+      // Если ввели что-то, чего нет в списке (и кастомные значения запрещены) — возвращаем как было
+      else if (!allowCustom && !options.includes(inputValue)) {
         setInputValue(previousValue);
-        setSearch('');
-        setIsOpen(false);
-        return;
-      }
-      
-      if (allowCustom && inputValue) {
-        onChange(inputValue);
-        setPreviousValue(inputValue);
-      } else if (inputValue && !options.includes(inputValue)) {
-        // Возвращаем к предыдущему валидному значению
-        setInputValue(previousValue);
-      } else if (options.includes(inputValue) && inputValue !== previousValue) {
-        // Если выбрано валидное новое значение, обновляем
+      } 
+      // Если значение валидно и изменилось — сохраняем
+      else if (inputValue !== previousValue) {
         onChange(inputValue);
         setPreviousValue(inputValue);
       }
+      
       setIsOpen(false);
       setSearch('');
     }, 200);
@@ -155,7 +135,7 @@ const SearchableDropdown = ({
       <input
         ref={inputRef}
         type="text"
-        value={search || inputValue}
+        value={isOpen ? search : inputValue}
         onChange={e => handleInputChange(e.target.value)}
         onFocus={handleFocus}
         onBlur={handleBlur}
@@ -163,11 +143,10 @@ const SearchableDropdown = ({
         className={`w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 focus:border-[#FDB913] focus:outline-none transition ${isOpen ? 'relative z-[70]' : ''}`}
       />
       
-      {/* Затемняющий оверлей */}
       {isOpen && filtered.length > 0 && (
         <div 
           className="fixed inset-0 bg-black/50 z-[60] transition-opacity duration-200"
-          onMouseDown={handleBlur}
+          onMouseDown={(e) => e.preventDefault()}
         />
       )}
       
@@ -229,7 +208,6 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
           <span className="text-base sm:text-lg font-bold">P2P Express</span>
         </div>
 
-        {/* Desktop меню */}
         <div className="hidden md:flex items-center gap-6">
           <button onClick={() => setPage('home')} className={`text-sm font-medium transition ${page === 'home' ? 'text-[#FDB913]' : 'text-[#9CA3AF] hover:text-white'}`}>Главная</button>
           <button onClick={() => setPage('sell')} className={`text-sm font-medium transition ${page === 'sell' ? 'text-[#FDB913]' : 'text-[#9CA3AF] hover:text-white'}`}>Продать</button>
@@ -242,7 +220,6 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
             Войти
           </button>
 
-          {/* Бургер-кнопка для мобильных */}
           <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden w-10 h-10 flex items-center justify-center"
@@ -256,7 +233,6 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
         </div>
       </div>
 
-      {/* Мобильное выпадающее меню */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-[#0a0a0a] border-t border-[#1a1f26]">
           <div className="px-4 py-2 space-y-1">
@@ -377,7 +353,7 @@ const SellPage = () => {
     if (!availableAssets.includes(asset)) {
       setAsset(availableAssets[0]);
     }
-  }, [network]);
+  }, [network, asset, availableAssets]);
 
   const getPaymentFieldConfig = () => {
     switch(paymentMethod) {
@@ -402,7 +378,6 @@ const SellPage = () => {
       <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">Продать криптовалюту</h1>
       
       <div className="bg-[#0f1419] border border-[#1e2430] rounded-2xl p-6 sm:p-8">
-        {/* Первая строка: Сеть + Актив + Способ оплаты */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <label className="text-sm font-medium mb-3 block">Сеть</label>
@@ -435,7 +410,6 @@ const SellPage = () => {
           </div>
         </div>
 
-        {/* Вторая строка: Сумма + Детали платежа + Банк (если нужен) */}
         <div className={`grid grid-cols-1 ${showBankField ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6 mb-6`}>
           <div>
             <label className="text-sm font-medium mb-3 block">Сумма {asset}</label>
@@ -473,7 +447,6 @@ const SellPage = () => {
           )}
         </div>
 
-        {/* Кнопка центрирована и имеет фиксированную максимальную ширину */}
         <div className="flex justify-center">
           <button className="w-full md:w-96 bg-[#C89000] text-white py-4 rounded-xl font-semibold hover:bg-[#B8860B] transition">
             Создать заявку
