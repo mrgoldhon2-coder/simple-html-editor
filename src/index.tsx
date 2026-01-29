@@ -9,7 +9,7 @@ type Page = typeof PAGES[number];
 
 /**
  * ВЫПАДАЮЩИЙ СПИСОК
- * Исправлено: Центрирование с вертикальным смещением вверх для вмещения всех 5 элементов
+ * Исправлено: Скролл "отнимает" расстояние (поднимает выше), чтобы влезло 5 элементов
  */
 const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выберите...', allowCustom = false, aliases = {} }: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,14 +36,14 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
             block: 'center' 
           });
           
-          // Через мгновение после начала анимации смещаем экран чуть ниже, 
-          // чтобы инпут поднялся выше центра и влезло 5 элементов списка
+          // Чтобы влезло 5 элементов, нам нужно поднять инпут ВЫШЕ центра.
+          // Для этого мы прокручиваем окно ВВЕРХ (отрицательный top или scrollBy с минусом)
           setTimeout(() => {
             window.scrollBy({
-              top: 120, // Сдвигаем вьюпорт вниз на 120px, поднимая контент выше
+              top: -150, // МИНУС поднимает контент выше, освобождая место снизу
               behavior: 'smooth'
             });
-          }, 50);
+          }, 100);
         }
       }, 150);
       return () => clearTimeout(timer);
@@ -79,9 +79,9 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
       {isOpen && (
         <>
           <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={e => e.preventDefault()} />
-          <div className="absolute z-[70] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-[250px] overflow-y-auto">
+          <div className="absolute z-[70] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-[280px] overflow-y-auto">
             {filtered.length > 0 ? filtered.map((opt: string, i: number) => (
-              <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-4 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0 active:bg-[#2a3040]">
+              <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-4 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0 active:bg-[#FDB913] active:text-black">
                 {opt}
               </button>
             )) : <div className="p-4 text-center text-gray-500 text-sm">Ничего не найдено</div>}
@@ -176,7 +176,7 @@ const SellPage = () => {
 
   return (
     <div className="page-container py-12">
-      <h1 className="text-3xl font-bold mb-8 text-white">{RU.sell.title}</h1>
+      <h1 className="text-3xl font-bold mb-8 text-white uppercase tracking-tighter">{RU.sell.title}</h1>
       <div className="card-dark space-y-8 p-6 md:p-10 bg-[#11141a] rounded-3xl border border-white/5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div><label className="label">{RU.sell.labels.network}</label><SearchableDropdown value={network} onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} options={networks} aliases={networkAliases} /></div>
@@ -201,7 +201,7 @@ const ProfilePage = () => (
     <h1 className="text-3xl font-bold mb-8 text-white">{RU.profile.title}</h1>
     <div className="flex gap-4 mb-8 overflow-x-auto no-scrollbar pb-2">
       {Object.entries(RU.profile.tabs).map(([k, v]) => (
-        <button key={k} className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap ${k === 'all' ? 'bg-[#FDB913] text-black font-bold' : 'bg-[#1a1f26] text-white'}`}>{v}</button>
+        <button key={k} className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${k === 'all' ? 'bg-[#FDB913] text-black font-bold' : 'bg-[#1a1f26] text-white hover:bg-[#222]'}`}>{v}</button>
       ))}
     </div>
     <div className="p-20 text-center bg-[#1a1f26] rounded-3xl border border-white/5 border-dashed">
@@ -218,7 +218,7 @@ const RewardsPage = () => (
       {RU.rewards.stats.map((s, i) => (
         <div key={i} className="p-8 bg-[#1a1f26] rounded-3xl border border-white/5">
           <div className="text-3xl mb-2">{s.i}</div>
-          <div className="text-sm text-[#6B7280] font-bold uppercase mb-1">{s.l}</div>
+          <div className="text-sm text-[#6B7280] font-bold uppercase tracking-wider mb-1">{s.l}</div>
           <div className="text-2xl font-bold text-white">{s.v}</div>
         </div>
       ))}
@@ -242,7 +242,7 @@ const App = () => {
   useEffect(() => { localStorage.setItem('currentPage', page); window.scrollTo(0, 0); }, [page]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-[#FDB913] selection:text-black">
+    <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-[#FDB913] selection:text-black font-sans">
       <Navbar page={page} setPage={setPage} />
       
       <main className="pb-24">
@@ -253,7 +253,7 @@ const App = () => {
         {page === 'auth' && (
           <div className="page-container py-12 flex justify-center">
             <div className="card-dark w-full max-w-md p-10 bg-[#1a1f26] rounded-3xl">
-              <h2 className="text-2xl font-bold mb-8 text-center text-white uppercase">Login</h2>
+              <h2 className="text-2xl font-bold mb-8 text-center text-white uppercase tracking-tighter">Login</h2>
               <div className="space-y-4">
                 <input className="input-base" placeholder="Email" />
                 <input className="input-base" type="password" placeholder="Пароль" />
