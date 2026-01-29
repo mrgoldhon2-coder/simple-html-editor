@@ -5,19 +5,6 @@ import { createRoot } from 'react-dom/client';
 const PAGES = ['home', 'sell', 'profile', 'rewards', 'auth'] as const;
 type Page = typeof PAGES[number];
 
-const GlobalStyles = () => (
-  <style>{`
-    html, body, #root { background-color: #000000 !important; margin: 0; min-height: 100vh; overscroll-behavior-y: none; }
-    @media (min-width: 768px) {
-      * { scrollbar-width: thin; scrollbar-color: #374151 #0a0a0a; }
-      *::-webkit-scrollbar { width: 16px; }
-      *::-webkit-scrollbar-track { background: #0a0a0a; }
-      *::-webkit-scrollbar-thumb { background: #374151; border-radius: 8px; }
-    }
-    html { overflow-y: scroll; }
-  `}</style>
-);
-
 const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выберите...', allowCustom = false, aliases = {} }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -29,9 +16,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
   const filtered = options.filter((opt: string) => {
     const searchLower = search.toLowerCase().replace(/-/g, '');
     const optLower = opt.toLowerCase().replace(/-/g, '');
-    
     if (optLower.includes(searchLower)) return true;
-    
     const optAliases = aliases[opt] || [];
     return optAliases.some((alias: string) => alias.toLowerCase().includes(searchLower));
   });
@@ -46,7 +31,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
       onChange(selected); setSearch(''); setIsOpen(false);
       inputRef.current?.blur();
     }
-  }, [filtered, search]);
+  }, [filtered, search, onChange]);
 
   const handleBlur = () => {
     setTimeout(() => {
@@ -59,11 +44,8 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
 
   const handleSelect = (opt: string) => {
     isSelectionMade.current = true;
-    setInputValue(opt);
-    setPreviousValue(opt);
-    onChange(opt);
-    setSearch('');
-    setIsOpen(false);
+    setInputValue(opt); setPreviousValue(opt); onChange(opt);
+    setSearch(''); setIsOpen(false);
   };
 
   return (
@@ -83,7 +65,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
           <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={e => e.preventDefault()} />
           <div className="absolute z-[70] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-60 overflow-y-auto">
             {filtered.map((opt: string, i: number) => (
-              <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-3 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0 text-white">{opt}</button>
+              <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-3 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0">{opt}</button>
             ))}
           </div>
         </>
@@ -161,25 +143,14 @@ const HomePage = ({ setPage }: any) => (
 
 const SellPage = () => {
   const networkData = [
-    { id: 'TON', name: 'The Open Network', display: 'TON (The Open Network)', aliases: ['тон', 'тонкоин'] },
-    { id: 'TRC20', name: 'Tron', display: 'Tron (TRC20)', aliases: ['трон', 'тронкоин'] },
-    { id: 'ERC20', name: 'Ethereum', display: 'Ethereum (ERC20)', aliases: ['эфириум', 'эфир', 'етх'] },
-    { id: 'BEP20', name: 'Binance Smart Chain', display: 'BSC (BEP20)', aliases: ['бинанс', 'бсц', 'бнб'] }
+    { display: 'TON (The Open Network)', aliases: ['тон', 'тонкоин'] },
+    { display: 'Tron (TRC20)', aliases: ['трон', 'тронкоин'] },
+    { display: 'Ethereum (ERC20)', aliases: ['эфириум', 'эфир', 'етх'] },
+    { display: 'BSC (BEP20)', aliases: ['бинанс', 'бсц', 'бнб'] }
   ];
-  
   const networks = networkData.map(n => n.display);
-  const networkAliases: Record<string, string[]> = networkData.reduce((acc, n) => {
-    acc[n.display] = n.aliases;
-    return acc;
-  }, {} as Record<string, string[]>);
-  
-  const assetsMap: any = { 
-    'TON (The Open Network)': ['USDT', 'TON'], 
-    'Tron (TRC20)': ['USDT'], 
-    'Ethereum (ERC20)': ['USDT'], 
-    'BSC (BEP20)': ['USDT'] 
-  };
-  
+  const networkAliases: any = networkData.reduce((acc, n) => ({...acc, [n.display]: n.aliases}), {});
+  const assetsMap: any = { 'TON (The Open Network)': ['USDT', 'TON'], 'Tron (TRC20)': ['USDT'], 'Ethereum (ERC20)': ['USDT'], 'BSC (BEP20)': ['USDT'] };
   const methods = ['СБП', 'Банковская карта', 'ЮМани', 'Пополнение мобильного'];
   const banks = ['Сбербанк', 'Т-Банк', 'Альфа-Банк', 'ВТБ', 'Газпромбанк', 'Райффайзенбанк', 'Совкомбанк', 'МТС Банк', 'Яндекс Банк', 'Озон Банк'];
   
@@ -193,39 +164,14 @@ const SellPage = () => {
       <h1 className="text-3xl font-bold mb-8">Продать криптовалюту</h1>
       <div className="card-dark space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <label className="label">Сеть</label>
-            <SearchableDropdown 
-              value={network} 
-              onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} 
-              options={networks}
-              aliases={networkAliases}
-            />
-          </div>
-          <div>
-            <label className="label">Актив</label>
-            <SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network] || ['USDT']} />
-          </div>
-          <div>
-            <label className="label">Способ оплаты</label>
-            <SearchableDropdown value={method} onChange={setMethod} options={methods} />
-          </div>
+          <div><label className="label">Сеть</label><SearchableDropdown value={network} onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} options={networks} aliases={networkAliases} /></div>
+          <div><label className="label">Актив</label><SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network] || ['USDT']} /></div>
+          <div><label className="label">Способ оплаты</label><SearchableDropdown value={method} onChange={setMethod} options={methods} /></div>
         </div>
         <div className={`grid grid-cols-1 ${method === 'СБП' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
-          <div>
-            <label className="label">Сумма {asset}</label>
-            <input type="text" placeholder="0.00" className="input-base text-lg font-bold" />
-          </div>
-          <div>
-            <label className="label">Реквизиты</label>
-            <input type="text" placeholder="Номер телефона или карты" className="input-base" />
-          </div>
-          {method === 'СБП' && (
-            <div>
-              <label className="label">Банк получателя</label>
-              <SearchableDropdown value={bank} onChange={setBank} options={banks} allowCustom={true} placeholder="Введите банк" />
-            </div>
-          )}
+          <div><label className="label">Сумма {asset}</label><input type="text" placeholder="0.00" className="input-base text-lg font-bold" /></div>
+          <div><label className="label">Реквизиты</label><input type="text" placeholder="Номер телефона или карты" className="input-base" /></div>
+          {method === 'СБП' && <div><label className="label">Банк получателя</label><SearchableDropdown value={bank} onChange={setBank} options={banks} allowCustom={true} placeholder="Введите банк" /></div>}
         </div>
         <button className="btn-secondary md:w-96 mx-auto block text-lg">Создать заявку</button>
       </div>
@@ -245,11 +191,9 @@ const ProfilePage = ({ setPage }: any) => {
         <h1 className="text-3xl font-bold">Мои заявки</h1>
         <button onClick={() => setPage('sell')} className="btn-primary">+ Создать заявку</button>
       </div>
-      <div className="bg-[#0f1419] rounded-xl p-2 flex gap-2 mb-8">
+      <div className="tabs-container mb-8">
         {['all', 'active', 'completed'].map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`btn-tab ${tab === t ? 'btn-tab-active' : 'btn-tab-inactive'}`}>
-            {t === 'all' ? 'Все' : t === 'active' ? 'Активные' : 'Завершённые'}
-          </button>
+          <button key={t} onClick={() => setTab(t)} className={`btn-tab ${tab === t ? 'btn-tab-active' : 'btn-tab-inactive'}`}>{t === 'all' ? 'Все' : t === 'active' ? 'Активные' : 'Завершённые'}</button>
         ))}
       </div>
       <div className="empty-state">
@@ -291,7 +235,7 @@ const AuthPage = () => {
   const [mode, setMode] = useState('login');
   return (
     <div className="page-container py-20 max-w-md mx-auto">
-      <div className="bg-[#0f1419] rounded-xl p-2 flex gap-2 mb-8 border border-[#1e2430]">
+      <div className="tabs-container mb-8">
         <button onClick={() => setMode('login')} className={`btn-tab ${mode === 'login' ? 'btn-tab-active' : 'btn-tab-inactive'}`}>Вход</button>
         <button onClick={() => setMode('register')} className={`btn-tab ${mode === 'register' ? 'btn-tab-active' : 'btn-tab-inactive'}`}>Регистрация</button>
       </div>
@@ -311,21 +255,17 @@ const App = () => {
     return (saved && PAGES.includes(saved as Page)) ? (saved as Page) : 'home';
   });
   useEffect(() => { localStorage.setItem('currentPage', page); }, [page]);
-
   return (
-    <>
-      <GlobalStyles />
-      <div className="min-h-screen text-white">
-        <Navbar page={page} setPage={setPage} />
-        <main className="pt-20">
-          {page === 'home' && <HomePage setPage={setPage} />}
-          {page === 'sell' && <SellPage />}
-          {page === 'profile' && <ProfilePage setPage={setPage} />}
-          {page === 'rewards' && <RewardsPage />}
-          {page === 'auth' && <AuthPage />}
-        </main>
-      </div>
-    </>
+    <div className="min-h-screen">
+      <Navbar page={page} setPage={setPage} />
+      <main className="pt-20">
+        {page === 'home' && <HomePage setPage={setPage} />}
+        {page === 'sell' && <SellPage />}
+        {page === 'profile' && <ProfilePage setPage={setPage} />}
+        {page === 'rewards' && <RewardsPage />}
+        {page === 'auth' && <AuthPage />}
+      </main>
+    </div>
   );
 };
 

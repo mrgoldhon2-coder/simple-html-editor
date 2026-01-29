@@ -2,30 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html, body, #root { 
+    @apply bg-black m-0 min-h-screen text-white; 
+    overscroll-behavior-y: none; 
+  }
+  
+  /* Настройка скроллбара */
+  @media (min-width: 768px) {
+    * { 
+      scrollbar-width: thin; 
+      scrollbar-color: #374151 #0a0a0a; 
+    }
+    *::-webkit-scrollbar { width: 16px; }
+    *::-webkit-scrollbar-track { background: #0a0a0a; }
+    *::-webkit-scrollbar-thumb { 
+      background: #374151; 
+      border-radius: 8px; 
+    }
+  }
+}
+
 @layer components {
+  /* Структурные компоненты */
   .page-container { @apply max-w-6xl mx-auto px-4 sm:px-6; }
   .card-dark { @apply bg-[#0f1419] border border-[#1e2430] rounded-2xl p-6 sm:p-10; }
+  .tabs-container { @apply bg-[#0f1419] rounded-xl p-2 flex gap-2 border border-[#1e2430]; }
+  
+  /* Элементы форм */
   .input-base { @apply w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 text-white focus:border-[#FDB913] focus:outline-none transition; }
+  .label { @apply text-sm font-medium mb-3 block text-gray-400; }
+  
+  /* Кнопки */
   .btn-primary { @apply bg-[#FDB913] text-black px-6 py-3 rounded-xl font-semibold hover:bg-[#E5A712] transition flex items-center justify-center gap-2; }
   .btn-secondary { @apply bg-[#C89000] text-white py-4 rounded-xl font-semibold hover:bg-[#B8860B] transition w-full; }
   .btn-tab { @apply flex-1 py-3 rounded-lg text-sm font-medium transition; }
   .btn-tab-active { @apply bg-[#1e2430] text-white; }
   .btn-tab-inactive { @apply text-[#6B7280] hover:text-white; }
+  
+  /* Навигация */
   .nav-link { @apply text-sm font-medium transition; }
   .nav-link-active { @apply text-[#FDB913]; }
   .nav-link-inactive { @apply text-[#9CA3AF] hover:text-white; }
+  .logo { @apply w-10 h-10 bg-[#FDB913] rounded-lg flex items-center justify-center text-black font-bold text-sm; }
   
-  .label { @apply text-sm font-medium mb-3 block text-gray-400; }
-  .stat-card { @apply card-dark text-center !p-6; }
+  /* Виджеты и карточки */
+  .stat-card { @apply card-dark text-center p-6 sm:p-6; } /* Убрал !important */
   .stat-icon { @apply text-3xl mb-3; }
   .stat-value { @apply text-3xl font-bold mb-1; }
   .stat-label { @apply text-sm text-[#6B7280]; }
+  
   .reward-card { @apply bg-[#1a1f26] p-6 rounded-xl flex items-center justify-between border border-[#2a3040]; }
   .reward-icon { @apply w-12 h-12 bg-[#2a3040] rounded-full flex items-center justify-center text-2xl; }
   .reward-points { @apply text-[#FDB913] font-bold; }
+  
   .feature-card { @apply text-center p-6 bg-[#1a1f26] rounded-xl border border-[#2a3040] hover:border-[#FDB913] transition; }
   .step-number { @apply w-16 h-16 bg-[#FDB913] rounded-full flex items-center justify-center text-black font-bold text-xl mx-auto mb-6; }
-  .logo { @apply w-10 h-10 bg-[#FDB913] rounded-lg flex items-center justify-center text-black font-bold text-sm; }
+  
   .warning-banner { @apply bg-[#1a1f26] rounded-xl border border-[#FDB913] p-6 mb-8 flex items-center gap-4; }
   .empty-state { @apply card-dark text-center py-12; }
   .empty-icon { @apply w-20 h-20 bg-[#1e2430] rounded-full flex items-center justify-center mx-auto mb-6; }
