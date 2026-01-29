@@ -47,6 +47,7 @@ const SearchableDropdown = ({
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [inputValue, setInputValue] = useState(value);
+  const [previousValue, setPreviousValue] = useState(value); // Сохраняем предыдущее значение
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -58,6 +59,7 @@ const SearchableDropdown = ({
   useEffect(() => {
     if (!isOpen && !search) {
       setInputValue(value);
+      setPreviousValue(value); // Обновляем сохраненное значение
     }
   }, [value]);
 
@@ -65,6 +67,7 @@ const SearchableDropdown = ({
     if (filtered.length === 1 && search.length >= 3) {
       onChange(filtered[0]);
       setInputValue(filtered[0]);
+      setPreviousValue(filtered[0]); // Обновляем сохраненное значение
       setSearch('');
       setIsOpen(false);
       // Снимаем фокус с поля ввода
@@ -108,22 +111,26 @@ const SearchableDropdown = ({
   };
 
   const handleFocus = () => {
+    setPreviousValue(inputValue); // Сохраняем текущее значение перед очисткой
     setSearch('');
+    setInputValue(''); // Стираем текст
     setIsOpen(true);
   };
 
   const handleSelect = (opt: string) => {
     onChange(opt);
     setInputValue(opt);
+    setPreviousValue(opt); // Обновляем сохраненное значение
     setSearch('');
     setIsOpen(false);
   };
 
   const handleBlur = () => {
     setTimeout(() => {
-      // Если поле пустое или это search mode, возвращаем к исходному значению
+      // Если ничего не выбрано (поле пустое или в режиме search), возвращаем предыдущее значение
       if (search || !inputValue) {
-        setInputValue(value);
+        setInputValue(previousValue);
+        onChange(previousValue);
         setSearch('');
         setIsOpen(false);
         return;
@@ -131,9 +138,15 @@ const SearchableDropdown = ({
       
       if (allowCustom && inputValue) {
         onChange(inputValue);
+        setPreviousValue(inputValue);
       } else if (inputValue && !options.includes(inputValue)) {
-        // Возвращаем к последнему валидному значению
-        setInputValue(value);
+        // Возвращаем к предыдущему валидному значению
+        setInputValue(previousValue);
+        onChange(previousValue);
+      } else if (options.includes(inputValue)) {
+        // Если выбрано валидное значение, обновляем
+        onChange(inputValue);
+        setPreviousValue(inputValue);
       }
       setIsOpen(false);
     }, 200);
