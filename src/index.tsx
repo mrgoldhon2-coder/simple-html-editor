@@ -50,6 +50,7 @@ const SearchableDropdown = ({
   const [search, setSearch] = useState('');
   const [inputValue, setInputValue] = useState(value);
   const [previousValue, setPreviousValue] = useState(value); // Сохраняем предыдущее значение
+  const [autoSelected, setAutoSelected] = useState(false); // Флаг автовыбора
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -67,6 +68,7 @@ const SearchableDropdown = ({
 
   useEffect(() => {
     if (filtered.length === 1 && search.length >= 3) {
+      setAutoSelected(true); // Устанавливаем флаг
       onChange(filtered[0]);
       setInputValue(filtered[0]);
       setPreviousValue(filtered[0]); // Обновляем сохраненное значение
@@ -95,6 +97,7 @@ const SearchableDropdown = ({
     setSearch('');
     setInputValue(''); // Стираем текст
     setIsOpen(true);
+    setAutoSelected(false); // Сбрасываем флаг автовыбора
   };
 
   const handleSelect = (opt: string) => {
@@ -107,6 +110,14 @@ const SearchableDropdown = ({
 
   const handleBlur = () => {
     setTimeout(() => {
+      // Если был автовыбор, просто сбрасываем флаг и выходим
+      if (autoSelected) {
+        setAutoSelected(false);
+        setSearch('');
+        setIsOpen(false);
+        return;
+      }
+      
       // Если ничего не выбрано (поле пустое), возвращаем предыдущее значение
       if (!inputValue) {
         setInputValue(previousValue);
