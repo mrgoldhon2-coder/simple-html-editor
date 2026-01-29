@@ -9,7 +9,8 @@ type Page = typeof PAGES[number];
 
 /**
  * ВЫПАДАЮЩИЙ СПИСОК
- * Исправлено: Скролл "отнимает" расстояние (поднимает выше), чтобы влезло 5 элементов
+ * Поведение: При клике инпут прыгает наверх, скролл страницы блокируется.
+ * Создается эффект "модального окна" для списка.
  */
 const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выберите...', allowCustom = false, aliases = {} }: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,6 +19,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
   const [previousValue, setPreviousValue] = useState(value);
   const isSelectionMade = useRef(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const scrollPosBeforeOpen = useRef(0);
 
   const filtered = options.filter((opt: string) => {
     const s = search.toLowerCase().replace(/-/g, '');
@@ -27,28 +29,32 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
   });
 
   useEffect(() => {
-    if (isOpen && filtered.length > 0) {
+    if (isOpen) {
+      // Сохраняем текущий скролл
+      scrollPosBeforeOpen.current = window.pageYOffset;
+      
+      // Блокируем скролл страницы
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+
       const timer = setTimeout(() => {
         if (dropdownRef.current) {
-          // Сначала центрируем инпут
+          // Поднимаем инпут к самому верху (block: 'start')
           dropdownRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
+            behavior: 'auto', 
+            block: 'start' 
           });
-          
-          // Чтобы влезло 5 элементов, нам нужно поднять инпут ВЫШЕ центра.
-          // Для этого мы прокручиваем окно ВВЕРХ (отрицательный top или scrollBy с минусом)
-          setTimeout(() => {
-            window.scrollBy({
-              top: -150, // МИНУС поднимает контент выше, освобождая место снизу
-              behavior: 'smooth'
-            });
-          }, 100);
+          // Небольшой отступ от самого края (например 20px)
+          window.scrollBy(0, -20);
         }
-      }, 150);
+      }, 50);
       return () => clearTimeout(timer);
+    } else {
+      // Разблокируем скролл
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
     }
-  }, [isOpen, filtered.length]);
+  }, [isOpen]);
 
   useEffect(() => { if (!isOpen) { setInputValue(value); setPreviousValue(value); } }, [value, isOpen]);
 
@@ -74,17 +80,26 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
         onChange={e => { isSelectionMade.current = false; setSearch(e.target.value); setInputValue(e.target.value); setIsOpen(true); }}
         onFocus={() => { isSelectionMade.current = false; setPreviousValue(inputValue); setSearch(''); setInputValue(''); setIsOpen(true); }}
         onBlur={handleBlur} placeholder={placeholder} 
-        className={`input-base ${isOpen ? 'relative z-[70] border-[#FDB913]' : ''}`}
+        className={`input-base ${isOpen ? 'relative z-[150] border-[#FDB913]' : ''}`}
       />
       {isOpen && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={e => e.preventDefault()} />
-          <div className="absolute z-[70] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-[280px] overflow-y-auto">
+          {/* Затемнение фона, которое перекрывает всё кроме инпута и списка */}
+          <div 
+            className="fixed inset-0 bg-black/80 z-[140] backdrop-blur-sm" 
+            onMouseDown={e => e.preventDefault()} 
+          />
+          <div className="absolute z-[150] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-2xl shadow-2xl max-h-[350px] overflow-y-auto overscroll-contain">
             {filtered.length > 0 ? filtered.map((opt: string, i: number) => (
-              <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-4 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0 active:bg-[#FDB913] active:text-black">
+              <button 
+                key={i} 
+                type="button" 
+                onMouseDown={() => handleSelect(opt)} 
+                className="w-full text-left px-5 py-5 hover:bg-[#2a3040] text-sm border-b border-white/5 last:border-b-0 active:bg-[#FDB913] active:text-black transition-colors"
+              >
                 {opt}
               </button>
-            )) : <div className="p-4 text-center text-gray-500 text-sm">Ничего не найдено</div>}
+            )) : <div className="p-6 text-center text-gray-500 text-sm">Ничего не найдено</div>}
           </div>
         </>
       )}
@@ -93,7 +108,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
 };
 
 /**
- * НАВБАР
+ * НАВБАР (Обычный элемент в топе страницы)
  */
 const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -119,7 +134,7 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
         </div>
       </div>
       {mobileOpen && (
-        <div className="md:hidden absolute top-16 left-0 w-full bg-[#0a0a0a] border-b border-[#1a1f26] p-4 flex flex-col gap-2 shadow-2xl">
+        <div className="md:hidden absolute top-16 left-0 w-full bg-[#0a0a0a] border-b border-[#1a1f26] p-4 flex flex-col gap-2 shadow-2xl z-[110]">
           {RU.nav.map(l => (
             <button key={l.id} onClick={() => { setPage(l.id as Page); setMobileOpen(false); }} className={`w-full text-left p-4 rounded-xl ${page === l.id ? 'bg-[#1a1f26] text-[#FDB913]' : 'text-gray-400'}`}>{l.l}</button>
           ))}
@@ -138,7 +153,7 @@ const HomePage = ({ setPage }: any) => (
       {RU.home.steps.map(s => (
         <div key={s.n} className="p-6 bg-[#1a1f26] rounded-2xl text-left border border-white/5">
           <div className="text-[#FDB913] text-2xl font-bold mb-2">{s.n}</div>
-          <h3 className="font-bold mb-2 text-white">{s.t}</h3>
+          <h3 className="font-bold mb-2 text-white uppercase text-xs tracking-widest">{s.t}</h3>
           <p className="text-sm text-[#6B7280]">{s.d}</p>
         </div>
       ))}
@@ -201,7 +216,7 @@ const ProfilePage = () => (
     <h1 className="text-3xl font-bold mb-8 text-white">{RU.profile.title}</h1>
     <div className="flex gap-4 mb-8 overflow-x-auto no-scrollbar pb-2">
       {Object.entries(RU.profile.tabs).map(([k, v]) => (
-        <button key={k} className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${k === 'all' ? 'bg-[#FDB913] text-black font-bold' : 'bg-[#1a1f26] text-white hover:bg-[#222]'}`}>{v}</button>
+        <button key={k} className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap ${k === 'all' ? 'bg-[#FDB913] text-black font-bold' : 'bg-[#1a1f26] text-white'}`}>{v}</button>
       ))}
     </div>
     <div className="p-20 text-center bg-[#1a1f26] rounded-3xl border border-white/5 border-dashed">
@@ -218,7 +233,7 @@ const RewardsPage = () => (
       {RU.rewards.stats.map((s, i) => (
         <div key={i} className="p-8 bg-[#1a1f26] rounded-3xl border border-white/5">
           <div className="text-3xl mb-2">{s.i}</div>
-          <div className="text-sm text-[#6B7280] font-bold uppercase tracking-wider mb-1">{s.l}</div>
+          <div className="text-sm text-[#6B7280] font-bold uppercase mb-1 tracking-widest">{s.l}</div>
           <div className="text-2xl font-bold text-white">{s.v}</div>
         </div>
       ))}
@@ -227,7 +242,7 @@ const RewardsPage = () => (
       {RU.rewards.items.map((item, i) => (
         <div key={i} className="flex items-center justify-between p-6 bg-[#1a1f26] rounded-2xl border border-white/5">
           <div>
-            <h3 className="font-bold text-white">{item.t}</h3>
+            <h3 className="font-bold text-white uppercase text-xs mb-1">{item.t}</h3>
             <p className="text-sm text-[#6B7280]">{item.d}</p>
           </div>
           <div className="text-[#FDB913] font-bold">+{item.p} PTS</div>
@@ -252,7 +267,7 @@ const App = () => {
         {page === 'rewards' && <RewardsPage />}
         {page === 'auth' && (
           <div className="page-container py-12 flex justify-center">
-            <div className="card-dark w-full max-w-md p-10 bg-[#1a1f26] rounded-3xl">
+            <div className="card-dark w-full max-w-md p-10 bg-[#1a1f26] rounded-3xl border border-white/5">
               <h2 className="text-2xl font-bold mb-8 text-center text-white uppercase tracking-tighter">Login</h2>
               <div className="space-y-4">
                 <input className="input-base" placeholder="Email" />
@@ -264,7 +279,7 @@ const App = () => {
         )}
       </main>
       
-      <footer className="py-12 border-t border-[#1a1f26] text-center text-xs text-[#4B5563]">
+      <footer className="py-12 border-t border-[#1a1f26] text-center text-xs text-[#4B5563] tracking-widest uppercase">
         <p>© 2026 {RU.common.exchangeName} • {RU.common.saveIncognito}</p>
       </footer>
     </div>
