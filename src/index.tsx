@@ -8,7 +8,7 @@ const PAGES = ['home', 'sell', 'profile', 'rewards', 'auth'] as const;
 type Page = typeof PAGES[number];
 
 /**
- * КОМПОНЕНТ ВЫПАДАЮЩЕГО СПИСКА
+ * ВЫПАДАЮЩИЙ СПИСОК (С исправленным скроллом внутри контейнера)
  */
 const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выберите...', allowCustom = false, aliases = {} }: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,17 +25,17 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
     return o.includes(s) || a;
   });
 
-  // Умный скролл внутри контейнера
+  // Мягкий скролл внутри main-контейнера при открытии
   useEffect(() => {
     if (isOpen && filtered.length > 0) {
       const timer = setTimeout(() => {
-        if (dropdownRef.current) {
-          dropdownRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-          });
+        const container = document.getElementById('main-scroll-root');
+        if (container && dropdownRef.current) {
+          const yOffset = -100; // Оставляем место под навбаром
+          const y = dropdownRef.current.getBoundingClientRect().top + container.scrollTop + yOffset;
+          container.scrollTo({ top: y, behavior: 'smooth' });
         }
-      }, 150);
+      }, 250); // Задержка, пока выезжает клавиатура
       return () => clearTimeout(timer);
     }
   }, [isOpen, filtered.length]);
@@ -68,11 +68,10 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
       />
       {isOpen && (
         <>
-          {/* Overlay: z-index ниже навбара (100) */}
           <div className="fixed inset-0 bg-black/60 z-[80]" onMouseDown={e => e.preventDefault()} />
           <div className="absolute z-[90] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-60 overflow-y-auto">
             {filtered.map((opt: string, i: number) => (
-              <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-3 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0 transition-colors">
+              <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-4 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0 active:bg-[#FDB913] active:text-black">
                 {opt}
               </button>
             ))}
@@ -84,16 +83,36 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
 };
 
 /**
- * НАВБАР
+ * НАВБАР (С защитой от сдвига Visual Viewport)
  */
 const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [topOffset, setTopOffset] = useState(0);
+
+  useEffect(() => {
+    const onVisualUpdate = () => {
+      if (window.visualViewport) {
+        // Принудительно держим навбар на "физическом" верху
+        setTopOffset(window.visualViewport.offsetTop);
+      }
+    };
+    window.visualViewport?.addEventListener('scroll', onVisualUpdate);
+    window.visualViewport?.addEventListener('resize', onVisualUpdate);
+    return () => {
+      window.visualViewport?.removeEventListener('scroll', onVisualUpdate);
+      window.visualViewport?.removeEventListener('resize', onVisualUpdate);
+    };
+  }, []);
+
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-black border-b border-[#1a1f26] z-[100] flex items-center">
+    <nav 
+      className="fixed left-0 right-0 h-16 bg-black border-b border-[#1a1f26] z-[1000] flex items-center transition-[top] duration-75"
+      style={{ top: `${topOffset}px` }}
+    >
       <div className="page-container w-full flex items-center justify-between">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setPage('home')}>
-          <div className="logo">P2P</div>
-          <span className="font-bold text-white text-lg tracking-tight">{RU.common.exchangeName}</span>
+          <div className="logo text-[#FDB913] font-black tracking-tighter">P2P</div>
+          <span className="font-bold text-white uppercase text-sm tracking-widest">{RU.common.exchangeName}</span>
         </div>
         <div className="hidden md:flex items-center gap-6">
           {RU.nav.map(l => (
@@ -101,8 +120,8 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
           ))}
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => setPage('auth')} className="btn-primary py-2 px-4 text-sm font-bold uppercase">{RU.auth.loginBtn}</button>
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-white">
+          <button onClick={() => setPage('auth')} className="btn-primary py-2 px-6 text-xs font-bold uppercase tracking-widest">{RU.auth.loginBtn}</button>
+          <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-white outline-none">
             <div className="w-6 h-0.5 bg-white mb-1.5" />
             <div className="w-6 h-0.5 bg-white mb-1.5" />
             <div className="w-6 h-0.5 bg-white" />
@@ -110,7 +129,7 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
         </div>
       </div>
       {mobileOpen && (
-        <div className="md:hidden absolute top-16 left-0 w-full bg-[#0a0a0a] border-b border-[#1a1f26] p-4 flex flex-col gap-2 shadow-2xl z-[110]">
+        <div className="md:hidden absolute top-16 left-0 w-full bg-black border-b border-[#1a1f26] p-4 flex flex-col gap-2 shadow-2xl z-[110]">
           {RU.nav.map(l => (
             <button key={l.id} onClick={() => { setPage(l.id as Page); setMobileOpen(false); }} className={`w-full text-left p-4 rounded-xl ${page === l.id ? 'bg-[#1a1f26] text-[#FDB913]' : 'text-gray-400'}`}>{l.l}</button>
           ))}
@@ -120,17 +139,20 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
   );
 };
 
+/**
+ * СТРАНИЦЫ (Контент)
+ */
 const HomePage = ({ setPage }: any) => (
   <div className="page-container py-20 text-center">
-    <h1 className="text-5xl font-bold mb-6">{RU.home.title} <span className="text-[#FDB913]">{RU.home.accent}</span></h1>
-    <p className="text-lg text-[#9CA3AF] mb-10 max-w-2xl mx-auto">{RU.home.sub}</p>
-    <button onClick={() => setPage('sell')} className="btn-primary px-10 py-4 text-xl font-bold uppercase">{RU.home.btn}</button>
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-20">
+    <h1 className="text-4xl md:text-5xl font-bold mb-6">{RU.home.title} <span className="text-[#FDB913]">{RU.home.accent}</span></h1>
+    <p className="text-lg text-[#9CA3AF] mb-10 max-w-2xl mx-auto font-medium">{RU.home.sub}</p>
+    <button onClick={() => setPage('sell')} className="btn-primary px-12 py-4 text-xl font-bold uppercase tracking-tighter">{RU.home.btn}</button>
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-20">
       {RU.home.steps.map(s => (
-        <div key={s.n} className="p-6 bg-[#1a1f26] rounded-2xl text-left border border-white/5 shadow-sm">
-          <div className="text-[#FDB913] text-2xl font-bold mb-2">{s.n}</div>
-          <h3 className="font-bold mb-2 text-white">{s.t}</h3>
-          <p className="text-sm text-[#6B7280]">{s.d}</p>
+        <div key={s.n} className="p-8 bg-[#1a1f26] rounded-3xl text-left border border-white/5">
+          <div className="text-[#FDB913] text-2xl font-bold mb-3">{s.n}</div>
+          <h3 className="font-bold mb-2 text-white uppercase text-sm">{s.t}</h3>
+          <p className="text-xs text-[#6B7280] leading-relaxed">{s.d}</p>
         </div>
       ))}
     </div>
@@ -167,8 +189,8 @@ const SellPage = () => {
 
   return (
     <div className="page-container py-12">
-      <h1 className="text-3xl font-bold mb-8 text-white">{RU.sell.title}</h1>
-      <div className="card-dark space-y-8 p-6 md:p-10 bg-[#11141a] rounded-3xl border border-white/5 shadow-2xl">
+      <h1 className="text-3xl font-bold mb-8 text-white uppercase tracking-tighter">{RU.sell.title}</h1>
+      <div className="card-dark space-y-8 p-6 md:p-10 relative">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div><label className="label">{RU.sell.labels.network}</label><SearchableDropdown value={network} onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} options={networks} aliases={networkAliases} /></div>
           <div><label className="label">{RU.sell.labels.asset}</label><SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network]} /></div>
@@ -179,7 +201,7 @@ const SellPage = () => {
           <div><label className="label">{currentConfig.label}</label><input type="text" placeholder={currentConfig.placeholder} className="input-base" value={details} onChange={e => setDetails(e.target.value)} /></div>
           {method.includes('СБП') && <div><label className="label">{RU.sell.labels.bank}</label><SearchableDropdown value={bank} onChange={setBank} options={RU.sell.banks} allowCustom={true} placeholder={RU.sell.placeholders.bank} /></div>}
         </div>
-        <button onClick={handleCreateOrder} disabled={!isValid || loading} className={`btn-secondary w-full md:w-96 mx-auto h-14 flex items-center justify-center gap-3 font-bold transition-all ${(!isValid || loading) ? 'opacity-50' : 'hover:scale-105 active:scale-95'}`}>
+        <button onClick={handleCreateOrder} disabled={!isValid || loading} className={`btn-secondary w-full md:w-96 mx-auto h-16 flex items-center justify-center gap-3 font-bold transition-all ${(!isValid || loading) ? 'opacity-20 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'}`}>
           {loading ? RU.common.loading : RU.sell.submitBtn}
         </button>
       </div>
@@ -190,13 +212,13 @@ const SellPage = () => {
 const ProfilePage = () => (
   <div className="page-container py-12">
     <h1 className="text-3xl font-bold mb-8 text-white">{RU.profile.title}</h1>
-    <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
+    <div className="flex gap-4 mb-8 overflow-x-auto no-scrollbar">
       {Object.entries(RU.profile.tabs).map(([k, v]) => (
-        <button key={k} className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap ${k === 'all' ? 'bg-[#FDB913] text-black font-bold' : 'bg-[#1a1f26] text-white hover:bg-[#222]'}`}>{v}</button>
+        <button key={k} className={`px-8 py-2 rounded-full text-xs font-bold uppercase tracking-widest whitespace-nowrap ${k === 'all' ? 'bg-[#FDB913] text-black' : 'bg-[#1a1f26] text-white hover:bg-[#222]'}`}>{v}</button>
       ))}
     </div>
-    <div className="p-20 text-center bg-[#1a1f26] rounded-3xl border border-white/5 border-dashed">
-      <p className="text-[#9CA3AF] font-medium">{RU.profile.empty}</p>
+    <div className="p-32 text-center bg-[#0d0f14] rounded-[40px] border border-white/5 border-dashed">
+      <p className="text-[#4B5563] font-bold uppercase tracking-widest text-xs">{RU.profile.empty}</p>
     </div>
   </div>
 );
@@ -204,37 +226,39 @@ const ProfilePage = () => (
 const RewardsPage = () => (
   <div className="page-container py-12">
     <h1 className="text-3xl font-bold mb-2 text-white">{RU.rewards.title}</h1>
-    <p className="text-[#9CA3AF] mb-10 font-medium">{RU.rewards.subtitle}</p>
+    <p className="text-[#6B7280] mb-10 font-medium">{RU.rewards.subtitle}</p>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
       {RU.rewards.stats.map((s, i) => (
-        <div key={i} className="p-6 bg-[#1a1f26] rounded-2xl border border-white/5">
-          <div className="text-3xl mb-2">{s.i}</div>
-          <div className="text-sm text-[#9CA3AF] font-bold uppercase tracking-widest">{s.l}</div>
-          <div className="text-2xl font-bold text-white mt-1">{s.v}</div>
+        <div key={i} className="p-8 bg-[#1a1f26] rounded-3xl border border-white/5">
+          <div className="text-sm text-[#6B7280] font-bold uppercase tracking-[0.2em] mb-2">{s.l}</div>
+          <div className="text-3xl font-bold text-white tracking-tighter">{s.v}</div>
         </div>
       ))}
     </div>
     <div className="space-y-4">
       {RU.rewards.items.map((item, i) => (
-        <div key={i} className="flex items-center justify-between p-6 bg-[#1a1f26] rounded-2xl border border-white/5 hover:bg-[#222] transition-colors">
+        <div key={i} className="flex items-center justify-between p-8 bg-[#111] rounded-3xl border border-white/5 hover:border-[#FDB913]/30 transition-colors">
           <div>
-            <h3 className="font-bold text-white">{item.t}</h3>
-            <p className="text-sm text-[#6B7280]">{item.d}</p>
+            <h3 className="font-bold text-white uppercase text-sm mb-1">{item.t}</h3>
+            <p className="text-xs text-[#6B7280] font-medium">{item.d}</p>
           </div>
-          <div className="text-[#FDB913] font-bold">+{item.p} pts</div>
+          <div className="text-[#FDB913] font-black italic">+{item.p} PTS</div>
         </div>
       ))}
     </div>
   </div>
 );
 
+/**
+ * ГЛАВНЫЙ APP (С изолированным скроллом)
+ */
 const App = () => {
   const [page, setPage] = useState<Page>(() => (localStorage.getItem('currentPage') as Page) || 'home');
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { 
     localStorage.setItem('currentPage', page); 
-    if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [page]);
 
   return (
@@ -242,33 +266,38 @@ const App = () => {
       <Navbar page={page} setPage={setPage} />
       
       <main 
-        ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto pt-16 scroll-smooth"
+        id="main-scroll-root"
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto pt-16 scroll-smooth relative"
       >
-        <div className="pb-20">
+        <div className="pb-32">
           {page === 'home' && <HomePage setPage={setPage} />}
           {page === 'sell' && <SellPage />}
           {page === 'profile' && <ProfilePage />}
           {page === 'rewards' && <RewardsPage />}
           {page === 'auth' && (
-            <div className="page-container py-12 flex justify-center">
-              <div className="card-dark w-full max-w-md p-10 bg-[#1a1f26] rounded-3xl border border-white/5">
-                <h2 className="text-2xl font-bold mb-6 text-center text-white">{RU.auth.tabs.login}</h2>
-                <input className="input-base mb-4" placeholder="Email" />
-                <input className="input-base mb-6" type="password" placeholder="Пароль" />
-                <button className="btn-primary w-full py-4 uppercase font-bold text-black bg-[#FDB913] rounded-xl hover:opacity-90">Войти</button>
+            <div className="page-container py-20 flex justify-center">
+              <div className="card-dark w-full max-w-md p-12 bg-[#1a1f26] rounded-[40px]">
+                <h2 className="text-3xl font-black mb-8 text-center text-white uppercase tracking-tighter">Login</h2>
+                <div className="space-y-4">
+                  <input className="input-base" placeholder="EMAIL ADDRESS" />
+                  <input className="input-base" type="password" placeholder="PASSWORD" />
+                  <button className="btn-primary w-full py-5 font-bold uppercase tracking-widest mt-4">Authorize</button>
+                </div>
               </div>
             </div>
           )}
         </div>
         
-        <footer className="py-10 border-t border-[#1a1f26] text-center text-sm text-[#4B5563]">
-          <p>© 2026 {RU.common.exchangeName} • {RU.common.saveIncognito}</p>
+        <footer className="py-16 border-t border-white/5 text-center bg-black/50">
+          <p className="text-[10px] text-[#333] font-bold uppercase tracking-[0.4em]">
+            © 2026 {RU.common.exchangeName} • {RU.common.saveIncognito}
+          </p>
         </footer>
       </main>
     </div>
   );
 };
 
-const root = document.getElementById('root');
-if (root) createRoot(root).render(<App />);
+const container = document.getElementById('root');
+if (container) createRoot(container).render(<App />);
