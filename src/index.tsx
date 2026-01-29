@@ -1,5 +1,6 @@
 import "./index.css";
 import { RU } from "./locales";
+import { Api } from "./api";
 import { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -146,16 +147,20 @@ const SellPage = () => {
   const [details, setDetails] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Простая валидация: сумма > 0 и реквизиты не пусты
   const isValid = Number(amount) > 0 && details.trim().length > 5 && (method !== 'СБП' || bank !== '');
 
-  const handleCreateOrder = () => {
+  const handleCreateOrder = async () => {
     setLoading(true);
-    // Имитация запроса к боту/серверу
-    setTimeout(() => {
-      alert("Заявка создана! Ожидайте уведомления.");
-      setLoading(false);
-    }, 2000);
+    const orderData = { network, asset, method, amount, details, bank: method === 'СБП' ? bank : null };
+    const result = await Api.createOrder(orderData);
+    
+    if (result.success) {
+      alert("Заявка успешно создана!");
+      setAmount(''); setDetails('');
+    } else {
+      alert("Ошибка: " + result.message);
+    }
+    setLoading(false);
   };
 
   return (
@@ -172,22 +177,16 @@ const SellPage = () => {
           <div>
             <label className="label">{RU.sell.labels.amount} {asset}</label>
             <input 
-              type="text" 
-              inputMode="decimal"
-              placeholder="0.00" 
+              type="text" inputMode="decimal" placeholder="0.00" 
               className={`input-base text-lg font-bold ${amount && Number(amount) <= 0 ? 'border-red-500' : ''}`}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} 
+              value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} 
             />
           </div>
           <div>
             <label className="label">{RU.sell.labels.details}</label>
             <input 
-              type="text" 
-              placeholder={RU.sell.placeholders.details} 
-              className="input-base"
-              value={details}
-              onChange={(e) => setDetails(e.target.value)}
+              type="text" placeholder={RU.sell.placeholders.details} className="input-base"
+              value={details} onChange={(e) => setDetails(e.target.value)}
             />
           </div>
           {method === 'СБП' && (
@@ -199,15 +198,11 @@ const SellPage = () => {
         </div>
 
         <button 
-          onClick={handleCreateOrder}
-          disabled={!isValid || loading}
+          onClick={handleCreateOrder} disabled={!isValid || loading}
           className={`btn-secondary md:w-96 mx-auto flex items-center justify-center gap-3 ${(!isValid || loading) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
         >
           {loading ? (
-            <>
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              {RU.common.loading}
-            </>
+            <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />{RU.common.loading}</>
           ) : RU.sell.submitBtn}
         </button>
       </div>
