@@ -14,12 +14,22 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
   const [previousValue, setPreviousValue] = useState(value);
   const isSelectionMade = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listEndRef = useRef<HTMLDivElement>(null); // Реф для конца списка
 
   const filtered = options.filter((opt: string) => {
     const s = search.toLowerCase().replace(/-/g, '');
     const o = opt.toLowerCase().replace(/-/g, '');
     return o.includes(s) || (aliases[opt] || []).some((a: string) => a.toLowerCase().includes(s));
   });
+
+  // Мгновенный скролл вниз при открытии
+  useEffect(() => {
+    if (isOpen && filtered.length > 0) {
+      setTimeout(() => {
+        listEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+      }, 0);
+    }
+  }, [isOpen, filtered.length]);
 
   useEffect(() => { if (!isOpen) { setInputValue(value); setPreviousValue(value); } }, [value, isOpen]);
 
@@ -58,8 +68,17 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
           <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={e => e.preventDefault()} />
           <div className="absolute z-[70] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-60 overflow-y-auto">
             {filtered.map((opt: string, i: number) => (
-              <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-3 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0">{opt}</button>
+              <button 
+                key={i} 
+                type="button" 
+                onMouseDown={() => handleSelect(opt)} 
+                className="w-full text-left px-4 py-3 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0"
+              >
+                {opt}
+              </button>
             ))}
+            {/* Невидимый элемент в конце для фокуса скролла */}
+            <div ref={listEndRef} />
           </div>
         </>
       )}
