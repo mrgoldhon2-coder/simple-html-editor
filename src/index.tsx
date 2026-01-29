@@ -141,49 +141,33 @@ const SellPage = () => {
   
   const [network, setNetwork] = useState(networks[0]);
   const [asset, setAsset] = useState('USDT');
-  const [method, setMethod] = useState(RU.sell.methods[0]); // 'СБП' по умолчанию
+  const [method, setMethod] = useState(RU.sell.methods[0]);
   const [bank, setBank] = useState('');
   const [amount, setAmount] = useState('');
   const [details, setDetails] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Логика определения типа реквизитов и валидации
-  const getMethodConfig = () => {
-    switch(method) {
-      case 'СБП': 
-        return { label: "Номер телефона", ph: RU.sell.placeholders.details.sbp, min: 10 };
-      case 'Карта РФ': 
-        return { label: "Номер карты", ph: RU.sell.placeholders.details.card, exact: 16 };
-      case 'ЮMoney': 
-        return { label: "Данные кошелька", ph: RU.sell.placeholders.details.umoney, min: 5 };
-      case 'Пополнение мобильного': 
-        return { label: "Номер телефона", ph: RU.sell.placeholders.details.mobile, min: 10 };
-      default: 
-        return { label: RU.sell.labels.details, ph: "", min: 1 };
-    }
-  };
+  // Получаем конфиг текущего метода из локализации
+  const currentMethodConfig = (RU.sell.methodConfigs as any)[method];
 
-  const config = getMethodConfig();
-
-  // Валидация кнопки
+  // Логика валидации (остается в коде, так как это бизнес-логика)
   const validateDetails = () => {
-    const d = details.replace(/\s/g, ''); // убираем пробелы для проверки
-    if (config.exact) return d.length === config.exact;
-    if (config.min) return d.length >= config.min;
-    return d.length > 0;
+    const d = details.replace(/\s/g, '');
+    if (method === 'Карта РФ') return d.length === 16;
+    if (method === 'ЮMoney') return d.length >= 5;
+    return d.length >= 10; // Для СБП и Мобильных
   };
 
-  const isValid = Number(amount) > 0 && validateDetails() && (method !== 'СБП' || bank !== '');
+  const isValid = Number(amount) > 0 && validateDetails() && (method.includes('СБП') ? bank !== '' : true);
 
   const handleCreateOrder = async () => {
     setLoading(true);
-    const orderData = { network, asset, method, amount, details, bank: method === 'СБП' ? bank : null };
-    const result = await Api.createOrder(orderData);
+    const result = await Api.createOrder({ network, asset, method, amount, details, bank: method.includes('СБП') ? bank : null });
     if (result.success) {
-      alert("Заявка успешно создана!");
+      alert("Заявка создана!");
       setAmount(''); setDetails('');
     } else {
-      alert("Ошибка: " + result.message);
+      alert(result.message);
     }
     setLoading(false);
   };
@@ -193,28 +177,37 @@ const SellPage = () => {
       <h1 className="text-3xl font-bold mb-8">{RU.sell.title}</h1>
       <div className="card-dark space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div><label className="label">{RU.sell.labels.network}</label><SearchableDropdown value={network} onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} options={networks} aliases={networkAliases} /></div>
-          <div><label className="label">{RU.sell.labels.asset}</label><SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network] || ['USDT']} /></div>
-          <div><label className="label">{RU.sell.labels.method}</label><SearchableDropdown value={method} onChange={(v: string) => { setMethod(v); setDetails(''); }} options={RU.sell.methods} /></div>
+          <div>
+            <label className="label">{RU.sell.labels.network}</label>
+            <SearchableDropdown value={network} onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} options={networks} aliases={networkAliases} />
+          </div>
+          <div>
+            <label className="label">{RU.sell.labels.asset}</label>
+            <SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network] || ['USDT']} />
+          </div>
+          <div>
+            <label className="label">{RU.sell.labels.method}</label>
+            <SearchableDropdown value={method} onChange={(v: string) => { setMethod(v); setDetails(''); }} options={RU.sell.methods} />
+          </div>
         </div>
         
-        <div className={`grid grid-cols-1 ${method === 'СБП' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
+        <div className={`grid grid-cols-1 ${method.includes('СБП') ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
           <div>
             <label className="label">{RU.sell.labels.amount} {asset}</label>
             <input 
               type="text" inputMode="decimal" placeholder="0.00" 
-              className={`input-base text-lg font-bold ${amount && Number(amount) <= 0 ? 'border-red-500' : ''}`}
+              className="input-base text-lg font-bold"
               value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} 
             />
           </div>
           <div>
-            <label className="label">{config.label}</label>
+            <label className="label">{currentMethodConfig.label}</label>
             <input 
-              type="text" placeholder={config.ph} className="input-base"
+              type="text" placeholder={currentMethodConfig.placeholder} className="input-base"
               value={details} onChange={(e) => setDetails(e.target.value)}
             />
           </div>
-          {method === 'СБП' && (
+          {method.includes('СБП') && (
             <div>
               <label className="label">{RU.sell.labels.bank}</label>
               <SearchableDropdown value={bank} onChange={setBank} options={RU.sell.banks} allowCustom={true} placeholder={RU.sell.placeholders.bank} />
@@ -226,9 +219,7 @@ const SellPage = () => {
           onClick={handleCreateOrder} disabled={!isValid || loading}
           className={`btn-secondary md:w-96 mx-auto flex items-center justify-center gap-3 ${(!isValid || loading) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
         >
-          {loading ? (
-            <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />{RU.common.loading}</>
-          ) : RU.sell.submitBtn}
+          {loading ? <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />{RU.common.loading}</> : RU.sell.submitBtn}
         </button>
       </div>
     </div>
