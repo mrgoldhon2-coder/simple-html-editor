@@ -25,14 +25,29 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
     return o.includes(s) || a;
   });
 
+// Исправленный скролл: всегда доводит до конца списка
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && filtered.length > 0) {
       const timer = setTimeout(() => {
-        dropdownRef.current?.scrollIntoView({ behavior: 'auto', block: 'center' });
-      }, 60);
+        if (dropdownRef.current) {
+          // Находим сам список (второй дочерний элемент после инпута)
+          const listElement = dropdownRef.current.querySelector('.max-h-60');
+          if (listElement) {
+            listElement.scrollIntoView({ 
+              behavior: 'auto', 
+              block: 'end', // Доводит нижнюю точку списка до нижнего края экрана
+              inline: 'nearest'
+            });
+            
+            // Если нужно чуть-чуть приподнять над краем, 
+            // можно сделать легкий скролл на 20px вверх после:
+            window.scrollBy(0, 40); 
+          }
+        }
+      }, 80); // Чуть увеличил задержку для стабильности на мобилках
       return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, filtered.length]);
 
   useEffect(() => { if (!isOpen) { setInputValue(value); setPreviousValue(value); } }, [value, isOpen]);
 
