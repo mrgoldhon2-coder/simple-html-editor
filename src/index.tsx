@@ -107,10 +107,17 @@ const SearchableDropdown = ({
 
   const handleBlur = () => {
     setTimeout(() => {
-      // Если ничего не выбрано (поле пустое или в режиме search), возвращаем предыдущее значение
-      if (search || !inputValue) {
+      // Если ничего не выбрано (поле пустое), возвращаем предыдущее значение
+      if (!inputValue) {
         setInputValue(previousValue);
-        onChange(previousValue);
+        setSearch('');
+        setIsOpen(false);
+        return;
+      }
+      
+      // Если в режиме поиска и поле не пустое, возвращаем предыдущее значение
+      if (search && !options.includes(inputValue)) {
+        setInputValue(previousValue);
         setSearch('');
         setIsOpen(false);
         return;
@@ -122,13 +129,13 @@ const SearchableDropdown = ({
       } else if (inputValue && !options.includes(inputValue)) {
         // Возвращаем к предыдущему валидному значению
         setInputValue(previousValue);
-        onChange(previousValue);
-      } else if (options.includes(inputValue)) {
-        // Если выбрано валидное значение, обновляем
+      } else if (options.includes(inputValue) && inputValue !== previousValue) {
+        // Если выбрано валидное новое значение, обновляем
         onChange(inputValue);
         setPreviousValue(inputValue);
       }
       setIsOpen(false);
+      setSearch('');
     }, 200);
   };
 
@@ -142,7 +149,7 @@ const SearchableDropdown = ({
         onFocus={handleFocus}
         onBlur={handleBlur}
         placeholder={placeholder}
-        className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 focus:border-[#FDB913] focus:outline-none transition relative z-[70]"
+        className={`w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 focus:border-[#FDB913] focus:outline-none transition ${isOpen ? 'relative z-[70]' : ''}`}
       />
       
       {/* Затемняющий оверлей */}
