@@ -7,23 +7,25 @@ type Page = typeof PAGES[number];
 
 const GlobalStyles = () => (
   <style>{`
-    * {
-      scrollbar-width: thin;
-      scrollbar-color: #374151 #0a0a0a;
-    }
-    *::-webkit-scrollbar {
-      width: 16px;
-      height: 16px;
-    }
-    *::-webkit-scrollbar-track {
-      background: #0a0a0a;
-    }
-    *::-webkit-scrollbar-thumb {
-      background: #374151;
-      border-radius: 8px;
-    }
-    *::-webkit-scrollbar-thumb:hover {
-      background: #4B5563;
+    @media (min-width: 768px) {
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #374151 #0a0a0a;
+      }
+      *::-webkit-scrollbar {
+        width: 16px;
+        height: 16px;
+      }
+      *::-webkit-scrollbar-track {
+        background: #0a0a0a;
+      }
+      *::-webkit-scrollbar-thumb {
+        background: #374151;
+        border-radius: 8px;
+      }
+      *::-webkit-scrollbar-thumb:hover {
+        background: #4B5563;
+      }
     }
     html {
       overflow-y: scroll;
@@ -74,28 +76,6 @@ const SearchableDropdown = ({
       inputRef.current?.blur();
     }
   }, [filtered, search]);
-
-  // Прокручиваем к полю при открытии списка на мобильных устройствах
-  useEffect(() => {
-    if (isOpen && containerRef.current && window.innerWidth < 768) {
-      setTimeout(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const rect = container.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        
-        // Вычисляем сколько нужно прокрутить чтобы поле было в верхней части экрана
-        // но не выше навбара (примерно 64px)
-        const targetScrollY = window.scrollY + rect.top - 80;
-        
-        window.scrollTo({
-          top: targetScrollY,
-          behavior: 'smooth'
-        });
-      }, 100);
-    }
-  }, [isOpen]);
 
   const handleInputChange = (val: string) => {
     setSearch(val);
@@ -162,10 +142,19 @@ const SearchableDropdown = ({
         onFocus={handleFocus}
         onBlur={handleBlur}
         placeholder={placeholder}
-        className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 focus:border-[#FDB913] focus:outline-none transition"
+        className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 focus:border-[#FDB913] focus:outline-none transition relative z-[70]"
       />
+      
+      {/* Затемняющий оверлей */}
       {isOpen && filtered.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-48 md:max-h-60 overflow-y-auto">
+        <div 
+          className="fixed inset-0 bg-black/50 z-[60] transition-opacity duration-200"
+          onMouseDown={handleBlur}
+        />
+      )}
+      
+      {isOpen && filtered.length > 0 && (
+        <div className="absolute z-[70] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-48 md:max-h-60 overflow-y-auto">
           {filtered.map((opt, i) => (
             <button
               key={i}
