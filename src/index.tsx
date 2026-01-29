@@ -17,7 +17,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
   const [previousValue, setPreviousValue] = useState(value);
   const isSelectionMade = useRef(false);
   
-  const dropdownRef = useRef<HTMLDivElement>(null); // Реф на весь компонент
+  const pageAnchorRef = useRef<HTMLDivElement>(null); // Якорь для прокрутки всей страницы
 
   const filtered = options.filter((opt: string) => {
     const s = search.toLowerCase().replace(/-/g, '');
@@ -26,18 +26,17 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
     return o.includes(s) || a;
   });
 
-  // Листаем СТРАНИЦУ к компоненту, когда список открыт
   useEffect(() => {
-    if (isOpen) {
-      // requestAnimationFrame гарантирует, что список уже отрисован
+    if (isOpen && filtered.length > 0) {
+      // Используем небольшую задержку, чтобы браузер успел отрисовать высоту списка
       requestAnimationFrame(() => {
-        dropdownRef.current?.scrollIntoView({ 
+        pageAnchorRef.current?.scrollIntoView({ 
           behavior: 'auto', 
-          block: 'center' // Выталкивает весь блок в центр экрана (выше клавиатуры)
+          block: 'end' // Докручиваем НИЗ списка до НИЗА видимой области
         });
       });
     }
-  }, [isOpen]);
+  }, [isOpen, filtered.length]);
 
   useEffect(() => { if (!isOpen) { setInputValue(value); setPreviousValue(value); } }, [value, isOpen]);
 
@@ -57,13 +56,14 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
   };
 
   return (
-    <div ref={dropdownRef} className="relative w-full">
+    <div className="relative w-full">
       <input
         type="text" value={isOpen ? search : inputValue}
         onChange={e => { isSelectionMade.current = false; setSearch(e.target.value); setInputValue(e.target.value); setIsOpen(true); }}
         onFocus={() => { isSelectionMade.current = false; setPreviousValue(inputValue); setSearch(''); setInputValue(''); setIsOpen(true); }}
         onBlur={handleBlur} placeholder={placeholder} className={`input-base ${isOpen ? 'relative z-[70]' : ''}`}
       />
+      
       {isOpen && filtered.length > 0 && (
         <>
           <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={e => e.preventDefault()} />
@@ -78,8 +78,14 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
                 {opt}
               </button>
             ))}
-            {/* Внутренний маяк удален, чтобы список не листался внутри */}
           </div>
+          {/* Этот элемент находится ВНЕ абсолютного списка, но ВНУТРИ контейнера. 
+              Он растягивает родителя, пока список открыт, и служит целью для скролла страницы. */}
+          <div 
+            ref={pageAnchorRef} 
+            className="absolute top-0 left-0 w-full"
+            style={{ height: 'calc(100% + 250px)', pointerEvents: 'none', zIndex: -1 }} 
+          />
         </>
       )}
     </div>
