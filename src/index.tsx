@@ -10,6 +10,9 @@ type Page = typeof PAGES[number];
 /**
  * ВЫПАДАЮЩИЙ СПИСОК
  */
+/**
+ * ОБНОВЛЕННЫЙ СКРОЛЛ ВНУТРИ DROPDOWN
+ */
 const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выберите...', allowCustom = false, aliases = {} }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -25,26 +28,20 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
     return o.includes(s) || a;
   });
 
-  // Умный скролл: держит инпут под навбаром и показывает весь список
   useEffect(() => {
     if (isOpen && filtered.length > 0) {
-      const timer = setTimeout(() => {
-        if (dropdownRef.current) {
-          const elementRect = dropdownRef.current.getBoundingClientRect();
-          const absoluteElementTop = elementRect.top + window.pageYOffset;
-          // Скроллим так, чтобы инпут был на 80px ниже верха (под навбаром)
-          window.scrollTo({
-            top: absoluteElementTop - 80,
-            behavior: 'auto'
-          });
-        }
-      }, 100);
-      return () => clearTimeout(timer);
+      setTimeout(() => {
+        // Мы используем scrollIntoView на самом элементе, 
+        // но теперь он будет работать внутри нашего нового скролл-контейнера
+        dropdownRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 150);
     }
   }, [isOpen, filtered.length]);
 
-  useEffect(() => { if (!isOpen) { setInputValue(value); setPreviousValue(value); } }, [value, isOpen]);
-
+  // ... (handleSelect, handleBlur и остальная логика без изменений) ...
   const handleSelect = (opt: string) => {
     isSelectionMade.current = true;
     setInputValue(opt); setPreviousValue(opt); onChange(opt);
@@ -71,19 +68,67 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
       />
       {isOpen && (
         <>
-          {/* Затемнение фона: z-index ниже навбара, но выше контента */}
           <div className="fixed inset-0 bg-black/60 z-[80]" onMouseDown={e => e.preventDefault()} />
-          
-          {/* Выпадающий список: z-index 90 */}
           <div className="absolute z-[90] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-60 overflow-y-auto">
-            {filtered.length > 0 ? filtered.map((opt: string, i: number) => (
+            {filtered.map((opt: string, i: number) => (
               <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-3 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0">
                 {opt}
               </button>
-            )) : <div className="p-4 text-center text-gray-500 text-sm">Ничего не найдено</div>}
+            ))}
           </div>
         </>
       )}
+    </div>
+  );
+};
+
+/**
+ * ФИНАЛЬНЫЙ APP С НЕЗАВИСИМЫМ СКРОЛЛОМ
+ */
+const App = () => {
+  const [page, setPage] = useState<Page>(() => (localStorage.getItem('currentPage') as Page) || 'home');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { 
+    localStorage.setItem('currentPage', page); 
+    // Сбрасываем скролл контента при смене страницы
+    if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
+  }, [page]);
+
+  return (
+    // Фиксируем высоту экрана и запрещаем общий скролл
+    <div className="fixed inset-0 flex flex-col bg-[#0a0a0a] text-white overflow-hidden selection:bg-[#FDB913] selection:text-black">
+      
+      {/* Навбар живет в своем слое, он никогда не скроллится */}
+      <Navbar page={page} setPage={setPage} />
+      
+      {/* Контентный слой со своим независимым скроллом */}
+      <main 
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden pt-16 scroll-smooth"
+      >
+        <div className="pb-20">
+          {page === 'home' && <HomePage setPage={setPage} />}
+          {page === 'sell' && <SellPage />}
+          {page === 'profile' && <ProfilePage />}
+          {page === 'rewards' && <RewardsPage />}
+          {page === 'auth' && (
+            <div className="page-container py-12 flex justify-center">
+              <div className="card-dark w-full max-w-md p-10 bg-[#1a1f26]">
+                <h2 className="text-2xl font-bold mb-6 text-center">{RU.auth.tabs.login}</h2>
+                <input className="input-base mb-4" placeholder="Email" />
+                <input className="input-base mb-6" type="password" placeholder="Пароль" />
+                <button className="btn-primary w-full py-4 uppercase font-bold text-black bg-[#FDB913] rounded-xl">Войти</button>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <footer className="py-10 border-t border-[#1a1f26] text-center text-sm text-[#4B5563]">
+          <p>© 2026 {RU.common.exchangeName} • {RU.common.saveIncognito}</p>
+        </footer>
+      </main>
+
     </div>
   );
 };
