@@ -18,7 +18,7 @@ const GlobalStyles = () => (
   `}</style>
 );
 
-const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выберите...', allowCustom = false }: any) => {
+const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выберите...', allowCustom = false, aliases = {} }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [inputValue, setInputValue] = useState(value);
@@ -26,9 +26,15 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
   const isSelectionMade = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const filtered = options.filter((opt: string) => 
-    opt.toLowerCase().replace(/-/g, '').includes(search.toLowerCase().replace(/-/g, ''))
-  );
+  const filtered = options.filter((opt: string) => {
+    const searchLower = search.toLowerCase().replace(/-/g, '');
+    const optLower = opt.toLowerCase().replace(/-/g, '');
+    
+    if (optLower.includes(searchLower)) return true;
+    
+    const optAliases = aliases[opt] || [];
+    return optAliases.some((alias: string) => alias.toLowerCase().includes(searchLower));
+  });
 
   useEffect(() => { if (!isOpen) { setInputValue(value); setPreviousValue(value); } }, [value, isOpen]);
 
@@ -44,11 +50,20 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
 
   const handleBlur = () => {
     setTimeout(() => {
-      if (isSelectionMade.current) { setIsOpen(false); setSearch(''); return; }
+      if (isSelectionMade.current) { isSelectionMade.current = false; setIsOpen(false); setSearch(''); return; }
       if (!inputValue || (!options.includes(inputValue) && !allowCustom)) { setInputValue(previousValue); }
       else { onChange(inputValue); setPreviousValue(inputValue); }
       setIsOpen(false); setSearch('');
     }, 200);
+  };
+
+  const handleSelect = (opt: string) => {
+    isSelectionMade.current = true;
+    setInputValue(opt);
+    setPreviousValue(opt);
+    onChange(opt);
+    setSearch('');
+    setIsOpen(false);
   };
 
   return (
@@ -68,7 +83,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
           <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={e => e.preventDefault()} />
           <div className="absolute z-[70] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-60 overflow-y-auto">
             {filtered.map((opt: string, i: number) => (
-              <button key={i} type="button" onMouseDown={() => { isSelectionMade.current = true; setInputValue(opt); setPreviousValue(opt); onChange(opt); setSearch(''); setIsOpen(false); }} className="w-full text-left px-4 py-3 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0 text-white">{opt}</button>
+              <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-3 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0 text-white">{opt}</button>
             ))}
           </div>
         </>
@@ -145,10 +160,29 @@ const HomePage = ({ setPage }: any) => (
 );
 
 const SellPage = () => {
-  const networks = ['TON (The Open Network)', 'Tron (TRC20)', 'Ethereum (ERC20)', 'BSC (BEP20)'];
-  const assetsMap: any = { 'TON (The Open Network)': ['USDT', 'TON'], 'Tron (TRC20)': ['USDT'], 'Ethereum (ERC20)': ['USDT'], 'BSC (BEP20)': ['USDT'] };
+  const networkData = [
+    { id: 'TON', name: 'The Open Network', display: 'TON (The Open Network)', aliases: ['тон', 'тонкоин'] },
+    { id: 'TRC20', name: 'Tron', display: 'Tron (TRC20)', aliases: ['трон', 'тронкоин'] },
+    { id: 'ERC20', name: 'Ethereum', display: 'Ethereum (ERC20)', aliases: ['эфириум', 'эфир', 'етх'] },
+    { id: 'BEP20', name: 'Binance Smart Chain', display: 'BSC (BEP20)', aliases: ['бинанс', 'бсц', 'бнб'] }
+  ];
+  
+  const networks = networkData.map(n => n.display);
+  const networkAliases: Record<string, string[]> = networkData.reduce((acc, n) => {
+    acc[n.display] = n.aliases;
+    return acc;
+  }, {} as Record<string, string[]>);
+  
+  const assetsMap: any = { 
+    'TON (The Open Network)': ['USDT', 'TON'], 
+    'Tron (TRC20)': ['USDT'], 
+    'Ethereum (ERC20)': ['USDT'], 
+    'BSC (BEP20)': ['USDT'] 
+  };
+  
   const methods = ['СБП', 'Банковская карта', 'ЮМани', 'Пополнение мобильного'];
   const banks = ['Сбербанк', 'Т-Банк', 'Альфа-Банк', 'ВТБ', 'Газпромбанк', 'Райффайзенбанк', 'Совкомбанк', 'МТС Банк', 'Яндекс Банк', 'Озон Банк'];
+  
   const [network, setNetwork] = useState(networks[0]);
   const [asset, setAsset] = useState('USDT');
   const [method, setMethod] = useState('СБП');
@@ -159,14 +193,39 @@ const SellPage = () => {
       <h1 className="text-3xl font-bold mb-8">Продать криптовалюту</h1>
       <div className="card-dark space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div><label className="text-sm font-medium mb-3 block text-gray-400">Сеть</label><SearchableDropdown value={network} onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} options={networks} /></div>
-          <div><label className="text-sm font-medium mb-3 block text-gray-400">Актив</label><SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network] || ['USDT']} /></div>
-          <div><label className="text-sm font-medium mb-3 block text-gray-400">Способ оплаты</label><SearchableDropdown value={method} onChange={setMethod} options={methods} /></div>
+          <div>
+            <label className="text-sm font-medium mb-3 block text-gray-400">Сеть</label>
+            <SearchableDropdown 
+              value={network} 
+              onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} 
+              options={networks}
+              aliases={networkAliases}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-3 block text-gray-400">Актив</label>
+            <SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network] || ['USDT']} />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-3 block text-gray-400">Способ оплаты</label>
+            <SearchableDropdown value={method} onChange={setMethod} options={methods} />
+          </div>
         </div>
         <div className={`grid grid-cols-1 ${method === 'СБП' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
-          <div><label className="text-sm font-medium mb-3 block text-gray-400">Сумма {asset}</label><input type="text" placeholder="0.00" className="input-base text-lg font-bold" /></div>
-          <div><label className="text-sm font-medium mb-3 block text-gray-400">Реквизиты</label><input type="text" placeholder="Номер телефона или карты" className="input-base" /></div>
-          {method === 'СБП' && <div><label className="text-sm font-medium mb-3 block text-gray-400">Банк получателя</label><SearchableDropdown value={bank} onChange={setBank} options={banks} allowCustom={true} placeholder="Введите банк" /></div>}
+          <div>
+            <label className="text-sm font-medium mb-3 block text-gray-400">Сумма {asset}</label>
+            <input type="text" placeholder="0.00" className="input-base text-lg font-bold" />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-3 block text-gray-400">Реквизиты</label>
+            <input type="text" placeholder="Номер телефона или карты" className="input-base" />
+          </div>
+          {method === 'СБП' && (
+            <div>
+              <label className="text-sm font-medium mb-3 block text-gray-400">Банк получателя</label>
+              <SearchableDropdown value={bank} onChange={setBank} options={banks} allowCustom={true} placeholder="Введите банк" />
+            </div>
+          )}
         </div>
         <button className="btn-secondary md:w-96 mx-auto block text-lg">Создать заявку</button>
       </div>
