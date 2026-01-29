@@ -140,10 +140,10 @@ const assetsMap: any = {
   'Tron (TRC20)': ['USDT', 'TRX', 'USDC', 'USDD'], 
   
   // Основные: ETH и USDT. Доп: USDC и обернутый биткоин (WBTC)
-  'Ethereum (ERC20)': ['ETH', 'USDT', 'USDC', 'WBTC', 'LINK'], 
+  'Ethereum (ERC20)': ['USDT', 'ETH', 'USDC', 'WBTC', 'LINK'], 
   
   // Основные: BNB и USDT. Доп: FDUSD (основной стейбл Бинанса), CAKE и TWT
-  'BNB Smart Chain (BEP20)': ['BNB', 'USDT', 'FDUSD', 'CAKE', 'TWT'] 
+  'BNB Smart Chain (BEP20)': ['USDT', 'BNB', 'FDUSD', 'CAKE', 'TWT'] 
 };
   
   const [network, setNetwork] = useState(networks[0]);
