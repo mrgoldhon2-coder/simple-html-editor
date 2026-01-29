@@ -8,7 +8,7 @@ const PAGES = ['home', 'sell', 'profile', 'rewards', 'auth'] as const;
 type Page = typeof PAGES[number];
 
 /**
- * ВЫПАДАЮЩИЙ СПИСОК (С исправленным скроллом до последнего элемента)
+ * ВЫПАДАЮЩИЙ СПИСОК
  */
 const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выберите...', allowCustom = false, aliases = {} }: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,15 +25,18 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
     return o.includes(s) || a;
   });
 
+  // Умный скролл: держит инпут под навбаром и показывает весь список
   useEffect(() => {
     if (isOpen && filtered.length > 0) {
       const timer = setTimeout(() => {
         if (dropdownRef.current) {
-          dropdownRef.current.scrollIntoView({ 
-            behavior: 'auto', 
-            block: 'end' // Доводит до самого низа списка
+          const elementRect = dropdownRef.current.getBoundingClientRect();
+          const absoluteElementTop = elementRect.top + window.pageYOffset;
+          // Скроллим так, чтобы инпут был на 80px ниже верха (под навбаром)
+          window.scrollTo({
+            top: absoluteElementTop - 80,
+            behavior: 'auto'
           });
-          window.scrollBy(0, 60); // Добавляем запас снизу для 5-го элемента
         }
       }, 100);
       return () => clearTimeout(timer);
@@ -64,12 +67,15 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
         onChange={e => { isSelectionMade.current = false; setSearch(e.target.value); setInputValue(e.target.value); setIsOpen(true); }}
         onFocus={() => { isSelectionMade.current = false; setPreviousValue(inputValue); setSearch(''); setInputValue(''); setIsOpen(true); }}
         onBlur={handleBlur} placeholder={placeholder} 
-        className={`input-base ${isOpen ? 'relative z-[70] border-[#FDB913]' : ''}`}
+        className={`input-base ${isOpen ? 'relative z-[90] border-[#FDB913]' : ''}`}
       />
       {isOpen && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={e => e.preventDefault()} />
-          <div className="absolute z-[70] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-60 overflow-y-auto">
+          {/* Затемнение фона: z-index ниже навбара, но выше контента */}
+          <div className="fixed inset-0 bg-black/60 z-[80]" onMouseDown={e => e.preventDefault()} />
+          
+          {/* Выпадающий список: z-index 90 */}
+          <div className="absolute z-[90] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-60 overflow-y-auto">
             {filtered.length > 0 ? filtered.map((opt: string, i: number) => (
               <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-3 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0">
                 {opt}
@@ -83,7 +89,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
 };
 
 /**
- * НАВБАР (Всегда виден)
+ * НАВБАР (На самом верхнем слое)
  */
 const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -92,7 +98,7 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
       <div className="page-container w-full flex items-center justify-between">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setPage('home')}>
           <div className="logo">P2P</div>
-          <span className="font-bold">{RU.common.exchangeName}</span>
+          <span className="font-bold text-white">{RU.common.exchangeName}</span>
         </div>
         <div className="hidden md:flex items-center gap-6">
           {RU.nav.map(l => (
@@ -100,8 +106,8 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
           ))}
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => setPage('auth')} className="btn-primary py-2 px-4 text-sm">{RU.auth.loginBtn}</button>
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-white">
+          <button onClick={() => setPage('auth')} className="btn-primary py-2 px-4 text-sm font-bold uppercase">{RU.auth.loginBtn}</button>
+          <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-white outline-none">
             <div className="w-6 h-0.5 bg-white mb-1.5" />
             <div className="w-6 h-0.5 bg-white mb-1.5" />
             <div className="w-6 h-0.5 bg-white" />
@@ -109,7 +115,7 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
         </div>
       </div>
       {mobileOpen && (
-        <div className="md:hidden absolute top-16 left-0 w-full bg-[#0a0a0a] border-b border-[#1a1f26] p-4 flex flex-col gap-2 shadow-2xl">
+        <div className="md:hidden absolute top-16 left-0 w-full bg-[#0a0a0a] border-b border-[#1a1f26] p-4 flex flex-col gap-2 shadow-2xl z-[110]">
           {RU.nav.map(l => (
             <button key={l.id} onClick={() => { setPage(l.id as Page); setMobileOpen(false); }} className={`w-full text-left p-4 rounded-xl ${page === l.id ? 'bg-[#1a1f26] text-[#FDB913]' : 'text-gray-400'}`}>{l.l}</button>
           ))}
@@ -123,7 +129,7 @@ const HomePage = ({ setPage }: any) => (
   <div className="page-container py-20 text-center">
     <h1 className="text-5xl font-bold mb-6">{RU.home.title} <span className="text-[#FDB913]">{RU.home.accent}</span></h1>
     <p className="text-lg text-[#9CA3AF] mb-10 max-w-2xl mx-auto">{RU.home.sub}</p>
-    <button onClick={() => setPage('sell')} className="btn-primary px-10 py-4 text-xl">{RU.home.btn}</button>
+    <button onClick={() => setPage('sell')} className="btn-primary px-10 py-4 text-xl font-bold uppercase">{RU.home.btn}</button>
     <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-20">
       {RU.home.steps.map(s => (
         <div key={s.n} className="p-6 bg-[#1a1f26] rounded-2xl text-left border border-white/5">
@@ -166,8 +172,8 @@ const SellPage = () => {
 
   return (
     <div className="page-container py-12">
-      <h1 className="text-3xl font-bold mb-8">{RU.sell.title}</h1>
-      <div className="card-dark space-y-8">
+      <h1 className="text-3xl font-bold mb-8 text-white">{RU.sell.title}</h1>
+      <div className="card-dark space-y-8 p-6 md:p-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div><label className="label">{RU.sell.labels.network}</label><SearchableDropdown value={network} onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} options={networks} aliases={networkAliases} /></div>
           <div><label className="label">{RU.sell.labels.asset}</label><SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network]} /></div>
@@ -178,7 +184,7 @@ const SellPage = () => {
           <div><label className="label">{currentConfig.label}</label><input type="text" placeholder={currentConfig.placeholder} className="input-base" value={details} onChange={e => setDetails(e.target.value)} /></div>
           {method.includes('СБП') && <div><label className="label">{RU.sell.labels.bank}</label><SearchableDropdown value={bank} onChange={setBank} options={RU.sell.banks} allowCustom={true} placeholder={RU.sell.placeholders.bank} /></div>}
         </div>
-        <button onClick={handleCreateOrder} disabled={!isValid || loading} className={`btn-secondary md:w-96 mx-auto flex items-center justify-center gap-3 ${(!isValid || loading) ? 'opacity-50' : 'hover:scale-105'}`}>
+        <button onClick={handleCreateOrder} disabled={!isValid || loading} className={`btn-secondary w-full md:w-96 mx-auto h-14 flex items-center justify-center gap-3 font-bold ${(!isValid || loading) ? 'opacity-50' : 'hover:scale-105'}`}>
           {loading ? RU.common.loading : RU.sell.submitBtn}
         </button>
       </div>
@@ -188,36 +194,36 @@ const SellPage = () => {
 
 const ProfilePage = () => (
   <div className="page-container py-12">
-    <h1 className="text-3xl font-bold mb-8">{RU.profile.title}</h1>
+    <h1 className="text-3xl font-bold mb-8 text-white">{RU.profile.title}</h1>
     <div className="flex gap-4 mb-8">
       {Object.entries(RU.profile.tabs).map(([k, v]) => (
-        <button key={k} className={`px-6 py-2 rounded-full text-sm font-medium ${k === 'all' ? 'bg-[#FDB913] text-black' : 'bg-[#1a1f26] text-white'}`}>{v}</button>
+        <button key={k} className={`px-6 py-2 rounded-full text-sm font-medium ${k === 'all' ? 'bg-[#FDB913] text-black font-bold' : 'bg-[#1a1f26] text-white hover:bg-[#222]'}`}>{v}</button>
       ))}
     </div>
     <div className="p-20 text-center bg-[#1a1f26] rounded-3xl border border-white/5 border-dashed">
-      <p className="text-[#9CA3AF]">{RU.profile.empty}</p>
+      <p className="text-[#9CA3AF] font-medium">{RU.profile.empty}</p>
     </div>
   </div>
 );
 
 const RewardsPage = () => (
   <div className="page-container py-12">
-    <h1 className="text-3xl font-bold mb-2">{RU.rewards.title}</h1>
-    <p className="text-[#9CA3AF] mb-10">{RU.rewards.subtitle}</p>
+    <h1 className="text-3xl font-bold mb-2 text-white">{RU.rewards.title}</h1>
+    <p className="text-[#9CA3AF] mb-10 font-medium">{RU.rewards.subtitle}</p>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
       {RU.rewards.stats.map((s, i) => (
         <div key={i} className="p-6 bg-[#1a1f26] rounded-2xl border border-white/5">
           <div className="text-3xl mb-2">{s.i}</div>
-          <div className="text-sm text-[#9CA3AF]">{s.l}</div>
-          <div className="text-2xl font-bold">{s.v}</div>
+          <div className="text-sm text-[#9CA3AF] font-bold uppercase tracking-widest">{s.l}</div>
+          <div className="text-2xl font-bold text-white mt-1">{s.v}</div>
         </div>
       ))}
     </div>
     <div className="space-y-4">
       {RU.rewards.items.map((item, i) => (
-        <div key={i} className="flex items-center justify-between p-6 bg-[#1a1f26] rounded-2xl border border-white/5">
+        <div key={i} className="flex items-center justify-between p-6 bg-[#1a1f26] rounded-2xl border border-white/5 hover:bg-[#222] transition-colors">
           <div>
-            <h3 className="font-bold">{item.t}</h3>
+            <h3 className="font-bold text-white">{item.t}</h3>
             <p className="text-sm text-[#6B7280]">{item.d}</p>
           </div>
           <div className="text-[#FDB913] font-bold">+{item.p} pts</div>
@@ -232,7 +238,7 @@ const App = () => {
   useEffect(() => { localStorage.setItem('currentPage', page); window.scrollTo(0, 0); }, [page]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white pt-16">
+    <div className="min-h-screen bg-[#0a0a0a] text-white pt-16 selection:bg-[#FDB913] selection:text-black">
       <Navbar page={page} setPage={setPage} />
       <main className="pb-20">
         {page === 'home' && <HomePage setPage={setPage} />}
@@ -241,11 +247,11 @@ const App = () => {
         {page === 'rewards' && <RewardsPage />}
         {page === 'auth' && (
           <div className="page-container py-12 flex justify-center">
-            <div className="card-dark w-full max-w-md p-10">
-              <h2 className="text-2xl font-bold mb-6 text-center">{RU.auth.tabs.login}</h2>
+            <div className="card-dark w-full max-w-md p-10 bg-[#1a1f26]">
+              <h2 className="text-2xl font-bold mb-6 text-center text-white">{RU.auth.tabs.login}</h2>
               <input className="input-base mb-4" placeholder="Email" />
               <input className="input-base mb-6" type="password" placeholder="Пароль" />
-              <button className="btn-primary w-full py-4 uppercase font-bold">Войти</button>
+              <button className="btn-primary w-full py-4 uppercase font-bold text-black bg-[#FDB913] rounded-xl">Войти</button>
             </div>
           </div>
         )}
@@ -257,5 +263,5 @@ const App = () => {
   );
 };
 
-const root = document.getElementById('root');
-if (root) createRoot(root).render(<App />);
+const rootElement = document.getElementById('root');
+if (rootElement) createRoot(rootElement).render(<App />);
