@@ -131,11 +131,32 @@ const HomePage = ({ setPage }: any) => (
 const SellPage = () => {
   const networks = RU.sell.networks.map(n => n.display);
   const networkAliases: any = RU.sell.networks.reduce((acc, n) => ({...acc, [n.display]: n.aliases}), {});
-  const assetsMap: any = { 'TON (The Open Network)': ['USDT', 'TON'], 'Tron (TRC20)': ['USDT'], 'Ethereum (ERC20)': ['USDT'], 'BNB Smart Chain (BEP20)': ['USDT'] };
+  const assetsMap: any = { 
+    'TON (The Open Network)': ['USDT', 'TON'], 
+    'Tron (TRC20)': ['USDT'], 
+    'Ethereum (ERC20)': ['USDT'], 
+    'BNB Smart Chain (BEP20)': ['USDT'] 
+  };
+  
   const [network, setNetwork] = useState(networks[0]);
   const [asset, setAsset] = useState('USDT');
   const [method, setMethod] = useState(RU.sell.methods[0]);
   const [bank, setBank] = useState('');
+  const [amount, setAmount] = useState('');
+  const [details, setDetails] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Простая валидация: сумма > 0 и реквизиты не пусты
+  const isValid = Number(amount) > 0 && details.trim().length > 5 && (method !== 'СБП' || bank !== '');
+
+  const handleCreateOrder = () => {
+    setLoading(true);
+    // Имитация запроса к боту/серверу
+    setTimeout(() => {
+      alert("Заявка создана! Ожидайте уведомления.");
+      setLoading(false);
+    }, 2000);
+  };
 
   return (
     <div className="page-container py-12">
@@ -146,12 +167,49 @@ const SellPage = () => {
           <div><label className="label">{RU.sell.labels.asset}</label><SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network] || ['USDT']} /></div>
           <div><label className="label">{RU.sell.labels.method}</label><SearchableDropdown value={method} onChange={setMethod} options={RU.sell.methods} /></div>
         </div>
+        
         <div className={`grid grid-cols-1 ${method === 'СБП' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
-          <div><label className="label">{RU.sell.labels.amount} {asset}</label><input type="text" placeholder="0.00" className="input-base text-lg font-bold" /></div>
-          <div><label className="label">{RU.sell.labels.details}</label><input type="text" placeholder={RU.sell.placeholders.details} className="input-base" /></div>
-          {method === 'СБП' && <div><label className="label">{RU.sell.labels.bank}</label><SearchableDropdown value={bank} onChange={setBank} options={RU.sell.banks} allowCustom={true} placeholder={RU.sell.placeholders.bank} /></div>}
+          <div>
+            <label className="label">{RU.sell.labels.amount} {asset}</label>
+            <input 
+              type="text" 
+              inputMode="decimal"
+              placeholder="0.00" 
+              className={`input-base text-lg font-bold ${amount && Number(amount) <= 0 ? 'border-red-500' : ''}`}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} 
+            />
+          </div>
+          <div>
+            <label className="label">{RU.sell.labels.details}</label>
+            <input 
+              type="text" 
+              placeholder={RU.sell.placeholders.details} 
+              className="input-base"
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+            />
+          </div>
+          {method === 'СБП' && (
+            <div>
+              <label className="label">{RU.sell.labels.bank}</label>
+              <SearchableDropdown value={bank} onChange={setBank} options={RU.sell.banks} allowCustom={true} placeholder={RU.sell.placeholders.bank} />
+            </div>
+          )}
         </div>
-        <button className="btn-secondary md:w-96 mx-auto block text-lg">{RU.sell.submitBtn}</button>
+
+        <button 
+          onClick={handleCreateOrder}
+          disabled={!isValid || loading}
+          className={`btn-secondary md:w-96 mx-auto flex items-center justify-center gap-3 ${(!isValid || loading) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
+        >
+          {loading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              {RU.common.loading}
+            </>
+          ) : RU.sell.submitBtn}
+        </button>
       </div>
     </div>
   );
