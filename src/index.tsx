@@ -9,7 +9,7 @@ type Page = typeof PAGES[number];
 
 /**
  * ВЫПАДАЮЩИЙ СПИСОК
- * Исправлено: Скролл гарантирует видимость 5 элементов + запас
+ * Исправлено: Динамическое центрирование элемента в области видимости
  */
 const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выберите...', allowCustom = false, aliases = {} }: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,23 +30,13 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
     if (isOpen && filtered.length > 0) {
       const timer = setTimeout(() => {
         if (dropdownRef.current) {
-          // Получаем координаты инпута
-          const rect = dropdownRef.current.getBoundingClientRect();
-          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-          
-          // Вычисляем позицию: верх инпута + высота инпута + высота выпадающего списка (240px для max-h-60)
-          // Прокручиваем так, чтобы весь этот блок был в поле зрения
-          const targetY = rect.top + scrollTop - 20; 
-
-          window.scrollTo({
-            top: targetY,
-            behavior: 'auto'
+          // Используем нативный метод центрирования относительно вьюпорта
+          dropdownRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
           });
-          
-          // Дополнительный сдвиг, чтобы 5-й элемент (высота ~48px каждый) точно влез
-          window.scrollBy(0, 150);
         }
-      }, 100);
+      }, 150);
       return () => clearTimeout(timer);
     }
   }, [isOpen, filtered.length]);
@@ -82,7 +72,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
           <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={e => e.preventDefault()} />
           <div className="absolute z-[70] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-60 overflow-y-auto">
             {filtered.length > 0 ? filtered.map((opt: string, i: number) => (
-              <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-3 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0">
+              <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-3 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0 transition-colors">
                 {opt}
               </button>
             )) : <div className="p-4 text-center text-gray-500 text-sm">Ничего не найдено</div>}
@@ -94,13 +84,13 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
 };
 
 /**
- * НАВБАР (НЕ фиксированный)
+ * НАВБАР (В потоке страницы, не фиксированный)
  */
 const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   return (
-    <nav className="w-full h-16 bg-black border-b border-[#1a1f26] flex items-center relative z-[100]">
-      <div className="page-container w-full flex items-center justify-between">
+    <header className="w-full bg-black border-b border-[#1a1f26] relative z-[100]">
+      <div className="page-container h-16 flex items-center justify-between">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setPage('home')}>
           <div className="logo font-black text-[#FDB913]">P2P</div>
           <span className="font-bold text-white uppercase text-sm tracking-tight">{RU.common.exchangeName}</span>
@@ -126,7 +116,7 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
           ))}
         </div>
       )}
-    </nav>
+    </header>
   );
 };
 
@@ -134,7 +124,7 @@ const HomePage = ({ setPage }: any) => (
   <div className="page-container py-20 text-center">
     <h1 className="text-4xl md:text-5xl font-bold mb-6">{RU.home.title} <span className="text-[#FDB913]">{RU.home.accent}</span></h1>
     <p className="text-lg text-[#9CA3AF] mb-10 max-w-2xl mx-auto">{RU.home.sub}</p>
-    <button onClick={() => setPage('sell')} className="btn-primary px-10 py-4 text-xl font-bold">{RU.home.btn}</button>
+    <button onClick={() => setPage('sell')} className="btn-primary px-10 py-4 text-xl font-bold uppercase">{RU.home.btn}</button>
     <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-20">
       {RU.home.steps.map(s => (
         <div key={s.n} className="p-6 bg-[#1a1f26] rounded-2xl text-left border border-white/5">
@@ -178,7 +168,7 @@ const SellPage = () => {
   return (
     <div className="page-container py-12">
       <h1 className="text-3xl font-bold mb-8 text-white">{RU.sell.title}</h1>
-      <div className="card-dark space-y-8 p-6 md:p-10">
+      <div className="card-dark space-y-8 p-6 md:p-10 bg-[#11141a] rounded-3xl border border-white/5 shadow-xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div><label className="label">{RU.sell.labels.network}</label><SearchableDropdown value={network} onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} options={networks} aliases={networkAliases} /></div>
           <div><label className="label">{RU.sell.labels.asset}</label><SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network]} /></div>
@@ -189,7 +179,7 @@ const SellPage = () => {
           <div><label className="label">{currentConfig.label}</label><input type="text" placeholder={currentConfig.placeholder} className="input-base" value={details} onChange={e => setDetails(e.target.value)} /></div>
           {method.includes('СБП') && <div><label className="label">{RU.sell.labels.bank}</label><SearchableDropdown value={bank} onChange={setBank} options={RU.sell.banks} allowCustom={true} placeholder={RU.sell.placeholders.bank} /></div>}
         </div>
-        <button onClick={handleCreateOrder} disabled={!isValid || loading} className={`btn-secondary w-full md:w-96 mx-auto h-16 flex items-center justify-center gap-3 font-bold ${(!isValid || loading) ? 'opacity-30' : 'hover:scale-105 active:scale-95'}`}>
+        <button onClick={handleCreateOrder} disabled={!isValid || loading} className={`btn-secondary w-full md:w-96 mx-auto h-16 flex items-center justify-center gap-3 font-bold transition-all ${(!isValid || loading) ? 'opacity-30 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}>
           {loading ? RU.common.loading : RU.sell.submitBtn}
         </button>
       </div>
@@ -200,9 +190,9 @@ const SellPage = () => {
 const ProfilePage = () => (
   <div className="page-container py-12">
     <h1 className="text-3xl font-bold mb-8 text-white">{RU.profile.title}</h1>
-    <div className="flex gap-4 mb-8 overflow-x-auto no-scrollbar">
+    <div className="flex gap-4 mb-8 overflow-x-auto no-scrollbar pb-2">
       {Object.entries(RU.profile.tabs).map(([k, v]) => (
-        <button key={k} className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap ${k === 'all' ? 'bg-[#FDB913] text-black' : 'bg-[#1a1f26] text-white hover:bg-[#222]'}`}>{v}</button>
+        <button key={k} className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${k === 'all' ? 'bg-[#FDB913] text-black font-bold' : 'bg-[#1a1f26] text-white hover:bg-[#222]'}`}>{v}</button>
       ))}
     </div>
     <div className="p-20 text-center bg-[#1a1f26] rounded-3xl border border-white/5 border-dashed">
@@ -217,16 +207,16 @@ const RewardsPage = () => (
     <p className="text-[#6B7280] mb-10 font-medium">{RU.rewards.subtitle}</p>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
       {RU.rewards.stats.map((s, i) => (
-        <div key={i} className="p-6 bg-[#1a1f26] rounded-2xl border border-white/5">
+        <div key={i} className="p-8 bg-[#1a1f26] rounded-3xl border border-white/5">
           <div className="text-3xl mb-2">{s.i}</div>
-          <div className="text-sm text-[#6B7280] font-bold uppercase mb-1">{s.l}</div>
+          <div className="text-sm text-[#6B7280] font-bold uppercase tracking-wider mb-1">{s.l}</div>
           <div className="text-2xl font-bold text-white">{s.v}</div>
         </div>
       ))}
     </div>
     <div className="space-y-4">
       {RU.rewards.items.map((item, i) => (
-        <div key={i} className="flex items-center justify-between p-6 bg-[#1a1f26] rounded-2xl border border-white/5">
+        <div key={i} className="flex items-center justify-between p-6 bg-[#1a1f26] rounded-2xl border border-white/5 hover:border-[#FDB913]/40 transition-colors">
           <div>
             <h3 className="font-bold text-white">{item.t}</h3>
             <p className="text-sm text-[#6B7280]">{item.d}</p>
@@ -243,27 +233,29 @@ const App = () => {
   useEffect(() => { localStorage.setItem('currentPage', page); window.scrollTo(0, 0); }, [page]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-[#FDB913] selection:text-black">
+    <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-[#FDB913] selection:text-black font-sans">
       <Navbar page={page} setPage={setPage} />
       
-      <main className="pb-20">
+      <main className="pb-24">
         {page === 'home' && <HomePage setPage={setPage} />}
         {page === 'sell' && <SellPage />}
         {page === 'profile' && <ProfilePage />}
         {page === 'rewards' && <RewardsPage />}
         {page === 'auth' && (
           <div className="page-container py-12 flex justify-center">
-            <div className="card-dark w-full max-w-md p-10 bg-[#1a1f26] rounded-3xl">
-              <h2 className="text-2xl font-bold mb-6 text-center text-white">Вход</h2>
-              <input className="input-base mb-4" placeholder="Email" />
-              <input className="input-base mb-6" type="password" placeholder="Пароль" />
-              <button className="btn-primary w-full py-4 uppercase font-bold text-black bg-[#FDB913] rounded-xl">Войти</button>
+            <div className="card-dark w-full max-w-md p-10 bg-[#1a1f26] rounded-3xl border border-white/5">
+              <h2 className="text-2xl font-bold mb-8 text-center text-white uppercase tracking-tighter">Login</h2>
+              <div className="space-y-4">
+                <input className="input-base" placeholder="Email" />
+                <input className="input-base" type="password" placeholder="Пароль" />
+                <button className="btn-primary w-full py-4 uppercase font-bold text-black bg-[#FDB913] rounded-xl hover:opacity-90 transition-opacity">Войти</button>
+              </div>
             </div>
           </div>
         )}
       </main>
       
-      <footer className="py-10 border-t border-[#1a1f26] text-center text-xs text-[#4B5563]">
+      <footer className="py-12 border-t border-[#1a1f26] text-center text-xs text-[#4B5563] bg-black/40">
         <p>© 2026 {RU.common.exchangeName} • {RU.common.saveIncognito}</p>
       </footer>
     </div>
