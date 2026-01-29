@@ -132,12 +132,19 @@ const HomePage = ({ setPage }: any) => (
 const SellPage = () => {
   const networks = RU.sell.networks.map(n => n.display);
   const networkAliases: any = RU.sell.networks.reduce((acc, n) => ({...acc, [n.display]: n.aliases}), {});
-  const assetsMap: any = { 
-    'TON (The Open Network)': ['USDT', 'TON'], 
-    'Tron (TRC20)': ['USDT'], 
-    'Ethereum (ERC20)': ['USDT'], 
-    'BNB Smart Chain (BEP20)': ['USDT'] 
-  };
+const assetsMap: any = { 
+  // Основные: TON и USDT. Доп: Notcoin (NOT) и Dogs (DOGS) — лидеры экосистемы
+  'TON (The Open Network)': ['TON', 'USDT', 'NOT', 'DOGS'], 
+  
+  // Основные: TRX и USDT. Доп: USDC и стабильный стейблкоин USDD
+  'Tron (TRC20)': ['USDT', 'TRX', 'USDC', 'USDD'], 
+  
+  // Основные: ETH и USDT. Доп: USDC и обернутый биткоин (WBTC)
+  'Ethereum (ERC20)': ['ETH', 'USDT', 'USDC', 'WBTC', 'LINK'], 
+  
+  // Основные: BNB и USDT. Доп: FDUSD (основной стейбл Бинанса), CAKE и TWT
+  'BNB Smart Chain (BEP20)': ['BNB', 'USDT', 'FDUSD', 'CAKE', 'TWT'] 
+};
   
   const [network, setNetwork] = useState(networks[0]);
   const [asset, setAsset] = useState('USDT');
