@@ -141,19 +141,44 @@ const SellPage = () => {
   
   const [network, setNetwork] = useState(networks[0]);
   const [asset, setAsset] = useState('USDT');
-  const [method, setMethod] = useState(RU.sell.methods[0]);
+  const [method, setMethod] = useState(RU.sell.methods[0]); // 'СБП' по умолчанию
   const [bank, setBank] = useState('');
   const [amount, setAmount] = useState('');
   const [details, setDetails] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const isValid = Number(amount) > 0 && details.trim().length > 5 && (method !== 'СБП' || bank !== '');
+  // Логика определения типа реквизитов и валидации
+  const getMethodConfig = () => {
+    switch(method) {
+      case 'СБП': 
+        return { label: "Номер телефона", ph: RU.sell.placeholders.details.sbp, min: 10 };
+      case 'Карта РФ': 
+        return { label: "Номер карты", ph: RU.sell.placeholders.details.card, exact: 16 };
+      case 'ЮMoney': 
+        return { label: "Данные кошелька", ph: RU.sell.placeholders.details.umoney, min: 5 };
+      case 'Пополнение мобильного': 
+        return { label: "Номер телефона", ph: RU.sell.placeholders.details.mobile, min: 10 };
+      default: 
+        return { label: RU.sell.labels.details, ph: "", min: 1 };
+    }
+  };
+
+  const config = getMethodConfig();
+
+  // Валидация кнопки
+  const validateDetails = () => {
+    const d = details.replace(/\s/g, ''); // убираем пробелы для проверки
+    if (config.exact) return d.length === config.exact;
+    if (config.min) return d.length >= config.min;
+    return d.length > 0;
+  };
+
+  const isValid = Number(amount) > 0 && validateDetails() && (method !== 'СБП' || bank !== '');
 
   const handleCreateOrder = async () => {
     setLoading(true);
     const orderData = { network, asset, method, amount, details, bank: method === 'СБП' ? bank : null };
     const result = await Api.createOrder(orderData);
-    
     if (result.success) {
       alert("Заявка успешно создана!");
       setAmount(''); setDetails('');
@@ -170,7 +195,7 @@ const SellPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div><label className="label">{RU.sell.labels.network}</label><SearchableDropdown value={network} onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} options={networks} aliases={networkAliases} /></div>
           <div><label className="label">{RU.sell.labels.asset}</label><SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network] || ['USDT']} /></div>
-          <div><label className="label">{RU.sell.labels.method}</label><SearchableDropdown value={method} onChange={setMethod} options={RU.sell.methods} /></div>
+          <div><label className="label">{RU.sell.labels.method}</label><SearchableDropdown value={method} onChange={(v: string) => { setMethod(v); setDetails(''); }} options={RU.sell.methods} /></div>
         </div>
         
         <div className={`grid grid-cols-1 ${method === 'СБП' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
@@ -183,9 +208,9 @@ const SellPage = () => {
             />
           </div>
           <div>
-            <label className="label">{RU.sell.labels.details}</label>
+            <label className="label">{config.label}</label>
             <input 
-              type="text" placeholder={RU.sell.placeholders.details} className="input-base"
+              type="text" placeholder={config.ph} className="input-base"
               value={details} onChange={(e) => setDetails(e.target.value)}
             />
           </div>
