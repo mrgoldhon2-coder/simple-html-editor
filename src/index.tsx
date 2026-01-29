@@ -48,6 +48,7 @@ const SearchableDropdown = ({
   const [search, setSearch] = useState('');
   const [inputValue, setInputValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const filtered = options.filter(opt => 
     opt.toLowerCase().replace(/-/g, '').includes(search.toLowerCase().replace(/-/g, ''))
@@ -71,6 +72,28 @@ const SearchableDropdown = ({
     }
   }, [filtered, search]);
 
+  // Прокручиваем к полю при открытии списка на мобильных устройствах
+  useEffect(() => {
+    if (isOpen && containerRef.current && window.innerWidth < 768) {
+      setTimeout(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const rect = container.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        
+        // Вычисляем сколько нужно прокрутить чтобы поле было в верхней части экрана
+        // но не выше навбара (примерно 64px)
+        const targetScrollY = window.scrollY + rect.top - 80;
+        
+        window.scrollTo({
+          top: targetScrollY,
+          behavior: 'smooth'
+        });
+      }, 100);
+    }
+  }, [isOpen]);
+
   const handleInputChange = (val: string) => {
     setSearch(val);
     setInputValue(val);
@@ -86,7 +109,6 @@ const SearchableDropdown = ({
 
   const handleFocus = () => {
     setSearch('');
-    setInputValue('');
     setIsOpen(true);
   };
 
@@ -99,8 +121,9 @@ const SearchableDropdown = ({
 
   const handleBlur = () => {
     setTimeout(() => {
-      // Если поле пустое или это search mode, просто закрываем
-      if (search) {
+      // Если поле пустое или это search mode, возвращаем к исходному значению
+      if (search || !inputValue) {
+        setInputValue(value);
         setSearch('');
         setIsOpen(false);
         return;
@@ -109,7 +132,7 @@ const SearchableDropdown = ({
       if (allowCustom && inputValue) {
         onChange(inputValue);
       } else if (inputValue && !options.includes(inputValue)) {
-        // Возвращаем к последнему валидному значению только если текущее невалидно
+        // Возвращаем к последнему валидному значению
         setInputValue(value);
       }
       setIsOpen(false);
@@ -117,7 +140,7 @@ const SearchableDropdown = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <input
         ref={inputRef}
         type="text"
@@ -129,7 +152,7 @@ const SearchableDropdown = ({
         className="w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 focus:border-[#FDB913] focus:outline-none transition"
       />
       {isOpen && filtered.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-48 md:max-h-60 overflow-y-auto">
           {filtered.map((opt, i) => (
             <button
               key={i}
@@ -311,9 +334,9 @@ const HomePage = ({ setPage }: { setPage: (p: Page) => void }) => {
 };
 
 const SellPage = () => {
-  const networks = ['The Open Network (TON)', 'Tron (TRC20)', 'Ethereum (ERC20)', 'BSC (BEP20)'];
+  const networks = ['TON (The Open Network)', 'Tron (TRC20)', 'Ethereum (ERC20)', 'BSC (BEP20)'];
   const assetsForNetwork: Record<string, string[]> = {
-    'The Open Network (TON)': ['USDT', 'TON'],
+    'TON (The Open Network)': ['USDT', 'TON'],
     'Tron (TRC20)': ['USDT'],
     'Ethereum (ERC20)': ['USDT'],
     'BSC (BEP20)': ['USDT']
@@ -321,7 +344,7 @@ const SellPage = () => {
   const paymentMethods = ['СБП', 'Банковская карта', 'ЮМани', 'Пополнение мобильного телефона'];
   const banks = ['Сбербанк', 'Т-Банк', 'Альфа-Банк', 'ВТБ', 'Газпромбанк', 'Райффайзенбанк', 'Совкомбанк', 'Открытие', 'Росбанк', 'МТС Банк', 'Яндекс Банк', 'Озон Банк'];
 
-  const [network, setNetwork] = useState('The Open Network (TON)');
+  const [network, setNetwork] = useState('TON (The Open Network)');
   const [asset, setAsset] = useState('USDT');
   const [paymentMethod, setPaymentMethod] = useState('СБП');
   const [amount, setAmount] = useState('');
