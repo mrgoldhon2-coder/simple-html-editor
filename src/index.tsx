@@ -100,7 +100,7 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
     <nav className="fixed top-0 w-full bg-black border-b border-[#1a1f26] z-50">
       <div className="page-container h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-[#FDB913] rounded-lg flex items-center justify-center text-black font-bold text-sm">P2P</div>
+          <div className="logo">P2P</div>
           <span className="font-bold">P2P Express</span>
         </div>
         <div className="hidden md:flex items-center gap-6">
@@ -138,9 +138,9 @@ const HomePage = ({ setPage }: any) => (
     <div className="mb-20">
       <h2 className="text-2xl sm:text-3xl font-bold text-center mb-12">Как это работает</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-        {[ { n: '1', t: 'Выберите актив', d: 'TON или USDT', i: '💰' }, { n: '2', t: 'Укажите сумму', d: 'И реквизиты', i: '✍️' }, { n: '3', t: 'Отправьте крипту', d: 'По адресу', i: '📤' }, { n: '4', t: 'Получите деньги', d: 'За 1-5 минут', i: '✅' } ].map(s => (
+        {[ { n: '1', t: 'Выберите актив', d: 'TON или USDT' }, { n: '2', t: 'Укажите сумму', d: 'И реквизиты' }, { n: '3', t: 'Отправьте крипту', d: 'По адресу' }, { n: '4', t: 'Получите деньги', d: 'За 1-5 минут' } ].map(s => (
           <div key={s.n} className="text-center">
-            <div className="w-16 h-16 bg-[#FDB913] rounded-full flex items-center justify-center text-black font-bold text-xl mx-auto mb-6">{s.n}</div>
+            <div className="step-number">{s.n}</div>
             <h3 className="font-semibold mb-2">{s.t}</h3>
             <p className="text-sm text-[#6B7280]">{s.d}</p>
           </div>
@@ -149,7 +149,7 @@ const HomePage = ({ setPage }: any) => (
     </div>
     <div className="card-dark grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
       {[ { i: '⚡', t: 'Быстро', d: 'Выплаты за 1-5 минут' }, { i: '💎', t: 'Выгодно', d: 'Лучшие курсы обмена' }, { i: '🔒', t: 'Безопасно', d: 'Проверенный сервис' }, { i: '🎁', t: 'Бонусы', d: 'Кэшбэк за сделки' }, { i: '🌐', t: 'TON & USDT', d: 'Популярные активы' }, { i: '📱', t: 'Удобно', d: 'Простой интерфейс' } ].map((item, i) => (
-        <div key={i} className="text-center p-6 bg-[#1a1f26] rounded-xl border border-[#2a3040] hover:border-[#FDB913] transition">
+        <div key={i} className="feature-card">
           <div className="text-4xl mb-3">{item.i}</div>
           <h3 className="font-semibold mb-2">{item.t}</h3>
           <p className="text-sm text-[#6B7280]">{item.d}</p>
@@ -194,7 +194,7 @@ const SellPage = () => {
       <div className="card-dark space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label className="text-sm font-medium mb-3 block text-gray-400">Сеть</label>
+            <label className="label">Сеть</label>
             <SearchableDropdown 
               value={network} 
               onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} 
@@ -203,26 +203,26 @@ const SellPage = () => {
             />
           </div>
           <div>
-            <label className="text-sm font-medium mb-3 block text-gray-400">Актив</label>
+            <label className="label">Актив</label>
             <SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network] || ['USDT']} />
           </div>
           <div>
-            <label className="text-sm font-medium mb-3 block text-gray-400">Способ оплаты</label>
+            <label className="label">Способ оплаты</label>
             <SearchableDropdown value={method} onChange={setMethod} options={methods} />
           </div>
         </div>
         <div className={`grid grid-cols-1 ${method === 'СБП' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
           <div>
-            <label className="text-sm font-medium mb-3 block text-gray-400">Сумма {asset}</label>
+            <label className="label">Сумма {asset}</label>
             <input type="text" placeholder="0.00" className="input-base text-lg font-bold" />
           </div>
           <div>
-            <label className="text-sm font-medium mb-3 block text-gray-400">Реквизиты</label>
+            <label className="label">Реквизиты</label>
             <input type="text" placeholder="Номер телефона или карты" className="input-base" />
           </div>
           {method === 'СБП' && (
             <div>
-              <label className="text-sm font-medium mb-3 block text-gray-400">Банк получателя</label>
+              <label className="label">Банк получателя</label>
               <SearchableDropdown value={bank} onChange={setBank} options={banks} allowCustom={true} placeholder="Введите банк" />
             </div>
           )}
@@ -237,7 +237,7 @@ const ProfilePage = ({ setPage }: any) => {
   const [tab, setTab] = useState('all');
   return (
     <div className="page-container py-12">
-      <div className="bg-[#1a1f26] rounded-xl border border-[#FDB913] p-6 mb-8 flex items-center gap-4">
+      <div className="warning-banner">
         <span className="text-2xl">🔒</span>
         <p className="text-sm">Режим инкогнито. Данные хранятся только в браузере и будут потеряны при очистке данных.</p>
       </div>
@@ -252,8 +252,8 @@ const ProfilePage = ({ setPage }: any) => {
           </button>
         ))}
       </div>
-      <div className="card-dark text-center py-12">
-        <div className="w-20 h-20 bg-[#1e2430] rounded-full flex items-center justify-center mx-auto mb-6"><span className="text-4xl">📋</span></div>
+      <div className="empty-state">
+        <div className="empty-icon"><span className="text-4xl">📋</span></div>
         <p className="text-[#9CA3AF]">Заявки отсутствуют</p>
       </div>
     </div>
@@ -265,22 +265,22 @@ const RewardsPage = () => (
     <h1 className="text-3xl font-bold mb-8">Награды</h1>
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
       {[ { l: 'Баллы', v: '0', i: '⭐' }, { l: 'Уровень', v: 'Новичок', i: '🎯' }, { l: 'Бонусы', v: '0 ₽', i: '💰' } ].map((s, i) => (
-        <div key={i} className="card-dark text-center !p-6">
-          <div className="text-3xl mb-3">{s.i}</div>
-          <div className="text-3xl font-bold mb-1">{s.v}</div>
-          <div className="text-sm text-[#6B7280]">{s.l}</div>
+        <div key={i} className="stat-card">
+          <div className="stat-icon">{s.i}</div>
+          <div className="stat-value">{s.v}</div>
+          <div className="stat-label">{s.l}</div>
         </div>
       ))}
     </div>
     <div className="card-dark space-y-4">
       <h2 className="text-xl font-bold mb-6">Доступные награды</h2>
       {[ { t: 'Первая сделка', d: 'Завершите свою первую сделку', p: 100 }, { t: 'Постоянный клиент', d: 'Совершите 10 сделок', p: 500 }, { t: 'VIP статус', d: 'Оборот более 100 000 ₽', p: 1000 } ].map((r, i) => (
-        <div key={i} className="bg-[#1a1f26] p-6 rounded-xl flex items-center justify-between border border-[#2a3040]">
+        <div key={i} className="reward-card">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-[#2a3040] rounded-full flex items-center justify-center text-2xl">🔒</div>
+            <div className="reward-icon">🔒</div>
             <div><div className="font-semibold">{r.t}</div><div className="text-sm text-[#6B7280]">{r.d}</div></div>
           </div>
-          <div className="text-[#FDB913] font-bold">+{r.p}</div>
+          <div className="reward-points">+{r.p}</div>
         </div>
       ))}
     </div>
