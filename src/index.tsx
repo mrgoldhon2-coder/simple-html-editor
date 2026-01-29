@@ -311,9 +311,9 @@ const HomePage = ({ setPage }: { setPage: (p: Page) => void }) => {
 };
 
 const SellPage = () => {
-  const networks = ['TON (The Open Network)', 'Tron (TRC20)', 'Ethereum (ERC20)', 'BSC (BEP20)'];
+  const networks = ['The Open Network (TON)', 'Tron (TRC20)', 'Ethereum (ERC20)', 'BSC (BEP20)'];
   const assetsForNetwork: Record<string, string[]> = {
-    'TON (The Open Network)': ['USDT', 'TON'],
+    'The Open Network (TON)': ['USDT', 'TON'],
     'Tron (TRC20)': ['USDT'],
     'Ethereum (ERC20)': ['USDT'],
     'BSC (BEP20)': ['USDT']
@@ -321,7 +321,7 @@ const SellPage = () => {
   const paymentMethods = ['СБП', 'Банковская карта', 'ЮМани', 'Пополнение мобильного телефона'];
   const banks = ['Сбербанк', 'Т-Банк', 'Альфа-Банк', 'ВТБ', 'Газпромбанк', 'Райффайзенбанк', 'Совкомбанк', 'Открытие', 'Росбанк', 'МТС Банк', 'Яндекс Банк', 'Озон Банк'];
 
-  const [network, setNetwork] = useState('TON (The Open Network)');
+  const [network, setNetwork] = useState('The Open Network (TON)');
   const [asset, setAsset] = useState('USDT');
   const [paymentMethod, setPaymentMethod] = useState('СБП');
   const [amount, setAmount] = useState('');
