@@ -39,7 +39,7 @@ export const RU = {
       method: "Куда получить рубли",
       amount: "Сумма к продаже",
       details: "Реквизиты получателя",
-      bank: "Банк получателя (для СБП)"
+      bank: "Банк получателя"
     },
     placeholders: {
       details: {
