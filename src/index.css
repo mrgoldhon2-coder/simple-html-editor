@@ -1,3 +1,53 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  /* Базовые стили страницы и контейнеров */
+  .page-container {
+    @apply max-w-6xl mx-auto px-4 sm:px-6;
+  }
+
+  .card-dark {
+    @apply bg-[#0f1419] border border-[#1e2430] rounded-2xl p-6 sm:p-8;
+  }
+
+  /* Поля ввода (Inputs) */
+  .input-base {
+    @apply w-full bg-[#0f1419] border border-[#2a3040] rounded-xl px-4 py-4 text-white focus:border-[#FDB913] focus:outline-none transition;
+  }
+
+  /* Кнопки */
+  .btn-primary {
+    @apply bg-[#FDB913] text-black px-6 py-3 rounded-xl font-semibold hover:bg-[#E5A712] transition flex items-center justify-center gap-2;
+  }
+
+  .btn-secondary {
+    @apply bg-[#C89000] text-white py-4 rounded-xl font-semibold hover:bg-[#B8860B] transition w-full;
+  }
+
+  .btn-tab {
+    @apply flex-1 py-3 rounded-lg text-sm font-medium transition;
+  }
+
+  .btn-tab-active {
+    @apply bg-[#1e2430] text-white;
+  }
+
+  .btn-tab-inactive {
+    @apply text-[#6B7280] hover:text-white;
+  }
+
+  /* Навигация */
+  .nav-link {
+    @apply text-sm font-medium transition;
+  }
+
+  .nav-link-active {
+    @apply text-[#FDB913];
+  }
+
+  .nav-link-inactive {
+    @apply text-[#9CA3AF] hover:text-white;
+  }
+}
