@@ -134,7 +134,7 @@ const SellPage = () => {
   const networkAliases: any = RU.sell.networks.reduce((acc, n) => ({...acc, [n.display]: n.aliases}), {});
 const assetsMap: any = { 
   // Основные: TON и USDT. Доп: Notcoin (NOT) и Dogs (DOGS) — лидеры экосистемы
-  'TON (The Open Network)': ['TON', 'USDT', 'NOT', 'DOGS'], 
+  'TON (The Open Network)': ['USDT', 'TON', 'NOT', 'DOGS'], 
   
   // Основные: TRX и USDT. Доп: USDC и стабильный стейблкоин USDD
   'Tron (TRC20)': ['USDT', 'TRX', 'USDC', 'USDD'], 
