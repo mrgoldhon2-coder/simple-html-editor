@@ -40,7 +40,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
       onChange(selected); setSearch(''); setIsOpen(false);
       inputRef.current?.blur();
     }
-  }, [filtered, search, onChange]);
+  }, [filtered, search]);
 
   const handleBlur = () => {
     setTimeout(() => {
@@ -79,17 +79,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
 
 const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const links = [
-    { id: 'home', l: 'Главная' },
-    { id: 'sell', l: 'Продать' },
-    { id: 'profile', l: 'Заявки' },
-    { id: 'rewards', l: 'Награды' }
-  ];
-
-  const handleNav = (id: Page) => {
-    setPage(id);
-    setMobileMenuOpen(false);
-  };
+  const links = [{ id: 'home', l: 'Главная' }, { id: 'sell', l: 'Продать' }, { id: 'profile', l: 'Заявки' }, { id: 'rewards', l: 'Награды' }];
 
   return (
     <nav className="fixed top-0 w-full bg-black border-b border-[#1a1f26] z-50">
@@ -98,13 +88,11 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
           <div className="w-10 h-10 bg-[#FDB913] rounded-lg flex items-center justify-center text-black font-bold text-sm">P2P</div>
           <span className="font-bold">P2P Express</span>
         </div>
-        
         <div className="hidden md:flex items-center gap-6">
           {links.map(link => (
             <button key={link.id} onClick={() => setPage(link.id as Page)} className={`nav-link ${page === link.id ? 'nav-link-active' : 'nav-link-inactive'}`}>{link.l}</button>
           ))}
         </div>
-
         <div className="flex items-center gap-3">
           <button onClick={() => setPage('auth')} className="btn-primary py-2 px-4 text-sm">Войти</button>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden flex flex-col gap-1.5 p-2 z-50">
@@ -114,14 +102,10 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
           </button>
         </div>
       </div>
-
-      {/* Мобильное меню */}
       {mobileMenuOpen && (
         <div className="md:hidden absolute top-16 left-0 w-full bg-[#0a0a0a] border-b border-[#1a1f26] py-4 px-4 flex flex-col gap-2 shadow-2xl">
           {links.map(link => (
-            <button key={link.id} onClick={() => handleNav(link.id as Page)} className={`w-full text-left p-4 rounded-xl text-sm font-medium ${page === link.id ? 'bg-[#1a1f26] text-[#FDB913]' : 'text-[#9CA3AF]'}`}>
-              {link.l}
-            </button>
+            <button key={link.id} onClick={() => { setPage(link.id as Page); setMobileMenuOpen(false); }} className={`w-full text-left p-4 rounded-xl text-sm font-medium ${page === link.id ? 'bg-[#1a1f26] text-[#FDB913]' : 'text-[#9CA3AF]'}`}>{link.l}</button>
           ))}
         </div>
       )}
@@ -130,24 +114,41 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
 };
 
 const HomePage = ({ setPage }: any) => (
-  <div className="page-container py-20 text-center">
-    <h1 className="text-4xl md:text-5xl font-bold mb-6">Продавайте криптовалюту <span className="text-[#FDB913]">быстро и выгодно</span></h1>
-    <p className="text-[#9CA3AF] mb-8 max-w-2xl mx-auto text-lg">Мгновенный обмен TON и USDT на рубли с лучшим курсом и моментальными выплатами</p>
-    <button onClick={() => setPage('sell')} className="btn-primary px-8 py-4 mx-auto text-lg">Продать криптовалюту <span>→</span></button>
+  <div className="page-container py-12 sm:py-20">
+    <div className="text-center mb-20">
+      <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6">Продавайте криптовалюту <span className="text-[#FDB913]">быстро и выгодно</span></h1>
+      <p className="text-base sm:text-lg text-[#9CA3AF] mb-8 max-w-2xl mx-auto">Мгновенный обмен TON и USDT на рубли с лучшим курсом и моментальными выплатами</p>
+      <button onClick={() => setPage('sell')} className="btn-primary px-8 py-4 mx-auto text-lg">Продать криптовалюту <span>→</span></button>
+    </div>
+    <div className="mb-20">
+      <h2 className="text-2xl sm:text-3xl font-bold text-center mb-12">Как это работает</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+        {[ { n: '1', t: 'Выберите актив', d: 'TON или USDT', i: '💰' }, { n: '2', t: 'Укажите сумму', d: 'И реквизиты', i: '✍️' }, { n: '3', t: 'Отправьте крипту', d: 'По адресу', i: '📤' }, { n: '4', t: 'Получите деньги', d: 'За 1-5 минут', i: '✅' } ].map(s => (
+          <div key={s.n} className="text-center">
+            <div className="w-16 h-16 bg-[#FDB913] rounded-full flex items-center justify-center text-black font-bold text-xl mx-auto mb-6">{s.n}</div>
+            <h3 className="font-semibold mb-2">{s.t}</h3>
+            <p className="text-sm text-[#6B7280]">{s.d}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div className="card-dark grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      {[ { i: '⚡', t: 'Быстро', d: 'Выплаты за 1-5 минут' }, { i: '💎', t: 'Выгодно', d: 'Лучшие курсы обмена' }, { i: '🔒', t: 'Безопасно', d: 'Проверенный сервис' }, { i: '🎁', t: 'Бонусы', d: 'Кэшбэк за сделки' }, { i: '🌐', t: 'TON & USDT', d: 'Популярные активы' }, { i: '📱', t: 'Удобно', d: 'Простой интерфейс' } ].map((item, i) => (
+        <div key={i} className="text-center p-6 bg-[#1a1f26] rounded-xl border border-[#2a3040] hover:border-[#FDB913] transition">
+          <div className="text-4xl mb-3">{item.i}</div>
+          <h3 className="font-semibold mb-2">{item.t}</h3>
+          <p className="text-sm text-[#6B7280]">{item.d}</p>
+        </div>
+      ))}
+    </div>
   </div>
 );
 
 const SellPage = () => {
   const networks = ['TON (The Open Network)', 'Tron (TRC20)', 'Ethereum (ERC20)', 'BSC (BEP20)'];
-  const assetsMap: any = {
-    'TON (The Open Network)': ['USDT', 'TON'],
-    'Tron (TRC20)': ['USDT'],
-    'Ethereum (ERC20)': ['USDT'],
-    'BSC (BEP20)': ['USDT']
-  };
+  const assetsMap: any = { 'TON (The Open Network)': ['USDT', 'TON'], 'Tron (TRC20)': ['USDT'], 'Ethereum (ERC20)': ['USDT'], 'BSC (BEP20)': ['USDT'] };
   const methods = ['СБП', 'Банковская карта', 'ЮМани', 'Пополнение мобильного'];
   const banks = ['Сбербанк', 'Т-Банк', 'Альфа-Банк', 'ВТБ', 'Газпромбанк', 'Райффайзенбанк', 'Совкомбанк', 'МТС Банк', 'Яндекс Банк', 'Озон Банк'];
-
   const [network, setNetwork] = useState(networks[0]);
   const [asset, setAsset] = useState('USDT');
   const [method, setMethod] = useState('СБП');
@@ -158,45 +159,74 @@ const SellPage = () => {
       <h1 className="text-3xl font-bold mb-8">Продать криптовалюту</h1>
       <div className="card-dark space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <label className="text-sm font-medium mb-3 block text-gray-400">Сеть</label>
-            <SearchableDropdown value={network} onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} options={networks} />
-          </div>
-          <div>
-            <label className="text-sm font-medium mb-3 block text-gray-400">Актив</label>
-            <SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network] || ['USDT']} />
-          </div>
-          <div>
-            <label className="text-sm font-medium mb-3 block text-gray-400">Способ оплаты</label>
-            <SearchableDropdown value={method} onChange={setMethod} options={methods} />
-          </div>
+          <div><label className="text-sm font-medium mb-3 block text-gray-400">Сеть</label><SearchableDropdown value={network} onChange={(v: string) => { setNetwork(v); setAsset(assetsMap[v][0]); }} options={networks} /></div>
+          <div><label className="text-sm font-medium mb-3 block text-gray-400">Актив</label><SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network] || ['USDT']} /></div>
+          <div><label className="text-sm font-medium mb-3 block text-gray-400">Способ оплаты</label><SearchableDropdown value={method} onChange={setMethod} options={methods} /></div>
         </div>
-
         <div className={`grid grid-cols-1 ${method === 'СБП' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
-          <div>
-            <label className="text-sm font-medium mb-3 block text-gray-400">Сумма {asset}</label>
-            <input type="text" placeholder="0.00" className="input-base text-lg font-bold" />
-          </div>
-          <div>
-            <label className="text-sm font-medium mb-3 block text-gray-400">Реквизиты</label>
-            <input type="text" placeholder="Номер телефона или карты" className="input-base" />
-          </div>
-          {method === 'СБП' && (
-            <div>
-              <label className="text-sm font-medium mb-3 block text-gray-400">Банк получателя</label>
-              <SearchableDropdown value={bank} onChange={setBank} options={banks} allowCustom={true} placeholder="Введите банк" />
-            </div>
-          )}
+          <div><label className="text-sm font-medium mb-3 block text-gray-400">Сумма {asset}</label><input type="text" placeholder="0.00" className="input-base text-lg font-bold" /></div>
+          <div><label className="text-sm font-medium mb-3 block text-gray-400">Реквизиты</label><input type="text" placeholder="Номер телефона или карты" className="input-base" /></div>
+          {method === 'СБП' && <div><label className="text-sm font-medium mb-3 block text-gray-400">Банк получателя</label><SearchableDropdown value={bank} onChange={setBank} options={banks} allowCustom={true} placeholder="Введите банк" /></div>}
         </div>
-
-        <div className="flex flex-col items-center gap-4">
-          <button className="btn-secondary md:w-96 text-lg">Создать заявку</button>
-          <p className="text-xs text-gray-500">Среднее время выплаты: 1-5 минут</p>
-        </div>
+        <button className="btn-secondary md:w-96 mx-auto block text-lg">Создать заявку</button>
       </div>
     </div>
   );
 };
+
+const ProfilePage = ({ setPage }: any) => {
+  const [tab, setTab] = useState('all');
+  return (
+    <div className="page-container py-12">
+      <div className="bg-[#1a1f26] rounded-xl border border-[#FDB913] p-6 mb-8 flex items-center gap-4">
+        <span className="text-2xl">🔒</span>
+        <p className="text-sm">Режим инкогнито. Данные хранятся только в браузере и будут потеряны при очистке данных.</p>
+      </div>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+        <h1 className="text-3xl font-bold">Мои заявки</h1>
+        <button onClick={() => setPage('sell')} className="btn-primary">+ Создать заявку</button>
+      </div>
+      <div className="bg-[#0f1419] rounded-xl p-2 flex gap-2 mb-8">
+        {['all', 'active', 'completed'].map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`btn-tab ${tab === t ? 'btn-tab-active' : 'btn-tab-inactive'}`}>
+            {t === 'all' ? 'Все' : t === 'active' ? 'Активные' : 'Завершённые'}
+          </button>
+        ))}
+      </div>
+      <div className="card-dark text-center py-12">
+        <div className="w-20 h-20 bg-[#1e2430] rounded-full flex items-center justify-center mx-auto mb-6"><span className="text-4xl">📋</span></div>
+        <p className="text-[#9CA3AF]">Заявки отсутствуют</p>
+      </div>
+    </div>
+  );
+};
+
+const RewardsPage = () => (
+  <div className="page-container py-12">
+    <h1 className="text-3xl font-bold mb-8">Награды</h1>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
+      {[ { l: 'Баллы', v: '0', i: '⭐' }, { l: 'Уровень', v: 'Новичок', i: '🎯' }, { l: 'Бонусы', v: '0 ₽', i: '💰' } ].map((s, i) => (
+        <div key={i} className="card-dark text-center !p-6">
+          <div className="text-3xl mb-3">{s.i}</div>
+          <div className="text-3xl font-bold mb-1">{s.v}</div>
+          <div className="text-sm text-[#6B7280]">{s.l}</div>
+        </div>
+      ))}
+    </div>
+    <div className="card-dark space-y-4">
+      <h2 className="text-xl font-bold mb-6">Доступные награды</h2>
+      {[ { t: 'Первая сделка', d: 'Завершите свою первую сделку', p: 100 }, { t: 'Постоянный клиент', d: 'Совершите 10 сделок', p: 500 }, { t: 'VIP статус', d: 'Оборот более 100 000 ₽', p: 1000 } ].map((r, i) => (
+        <div key={i} className="bg-[#1a1f26] p-6 rounded-xl flex items-center justify-between border border-[#2a3040]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-[#2a3040] rounded-full flex items-center justify-center text-2xl">🔒</div>
+            <div><div className="font-semibold">{r.t}</div><div className="text-sm text-[#6B7280]">{r.d}</div></div>
+          </div>
+          <div className="text-[#FDB913] font-bold">+{r.p}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 const AuthPage = () => {
   const [mode, setMode] = useState('login');
@@ -221,7 +251,6 @@ const App = () => {
     const saved = localStorage.getItem('currentPage');
     return (saved && PAGES.includes(saved as Page)) ? (saved as Page) : 'home';
   });
-
   useEffect(() => { localStorage.setItem('currentPage', page); }, [page]);
 
   return (
@@ -232,13 +261,9 @@ const App = () => {
         <main className="pt-20">
           {page === 'home' && <HomePage setPage={setPage} />}
           {page === 'sell' && <SellPage />}
+          {page === 'profile' && <ProfilePage setPage={setPage} />}
+          {page === 'rewards' && <RewardsPage />}
           {page === 'auth' && <AuthPage />}
-          {['profile', 'rewards'].includes(page) && (
-            <div className="page-container py-20 text-center text-gray-500">
-              <div className="text-4xl mb-4">⚙️</div>
-              Раздел "{page === 'profile' ? 'Заявки' : 'Награды'}" временно в разработке
-            </div>
-          )}
         </main>
       </div>
     </>
