@@ -7,6 +7,9 @@ import { createRoot } from 'react-dom/client';
 const PAGES = ['home', 'sell', 'profile', 'rewards', 'auth'] as const;
 type Page = typeof PAGES[number];
 
+/**
+ * Универсальный выпадающий список с поиском и мгновенным скроллом
+ */
 const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выберите...', allowCustom = false, aliases = {} }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -14,54 +17,69 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
   const [previousValue, setPreviousValue] = useState(value);
   const isSelectionMade = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const listEndRef = useRef<HTMLDivElement>(null); // Реф для конца списка
+  const listEndRef = useRef<HTMLDivElement>(null);
 
   const filtered = options.filter((opt: string) => {
     const s = search.toLowerCase().replace(/-/g, '');
     const o = opt.toLowerCase().replace(/-/g, '');
-    return o.includes(s) || (aliases[opt] || []).some((a: string) => a.toLowerCase().includes(s));
+    const a = (aliases[opt] || []).some((alias: string) => alias.toLowerCase().includes(s));
+    return o.includes(s) || a;
   });
 
-  // Мгновенный скролл вниз при открытии
+  // Мгновенная прокрутка к концу списка при открытии (с учетом распорки)
   useEffect(() => {
     if (isOpen && filtered.length > 0) {
-      setTimeout(() => {
-        listEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-      }, 0);
+      requestAnimationFrame(() => {
+        listEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+      });
     }
   }, [isOpen, filtered.length]);
 
-  useEffect(() => { if (!isOpen) { setInputValue(value); setPreviousValue(value); } }, [value, isOpen]);
-
-  useEffect(() => {
-    if (filtered.length === 1 && search.length >= 3) {
-      handleSelect(filtered[0]);
-      inputRef.current?.blur();
-    }
-  }, [filtered, search]);
+  useEffect(() => { 
+    if (!isOpen) { 
+      setInputValue(value); 
+      setPreviousValue(value); 
+    } 
+  }, [value, isOpen]);
 
   const handleSelect = (opt: string) => {
     isSelectionMade.current = true;
-    setInputValue(opt); setPreviousValue(opt); onChange(opt);
-    setSearch(''); setIsOpen(false);
+    setInputValue(opt); 
+    setPreviousValue(opt); 
+    onChange(opt);
+    setSearch(''); 
+    setIsOpen(false);
   };
 
   const handleBlur = () => {
     setTimeout(() => {
-      if (isSelectionMade.current) { isSelectionMade.current = false; setIsOpen(false); return; }
-      if (!inputValue || (!options.includes(inputValue) && !allowCustom)) setInputValue(previousValue);
-      else { onChange(inputValue); setPreviousValue(inputValue); }
-      setIsOpen(false); setSearch('');
+      if (isSelectionMade.current) { 
+        isSelectionMade.current = false; 
+        setIsOpen(false); 
+        return; 
+      }
+      if (!inputValue || (!options.includes(inputValue) && !allowCustom)) {
+        setInputValue(previousValue);
+      } else { 
+        onChange(inputValue); 
+        setPreviousValue(inputValue); 
+      }
+      setIsOpen(false); 
+      setSearch('');
     }, 200);
   };
 
   return (
     <div className="relative w-full">
       <input
-        ref={inputRef} type="text" value={isOpen ? search : inputValue}
+        ref={inputRef} 
+        type="text" 
+        value={isOpen ? search : inputValue}
         onChange={e => { isSelectionMade.current = false; setSearch(e.target.value); setInputValue(e.target.value); setIsOpen(true); }}
         onFocus={() => { isSelectionMade.current = false; setPreviousValue(inputValue); setSearch(''); setInputValue(''); setIsOpen(true); }}
-        onBlur={handleBlur} placeholder={placeholder} className={`input-base ${isOpen ? 'relative z-[70]' : ''}`}
+        onBlur={handleBlur} 
+        placeholder={placeholder} 
+        className={`input-base ${isOpen ? 'relative z-[70]' : ''}`}
       />
       {isOpen && filtered.length > 0 && (
         <>
@@ -77,8 +95,8 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
                 {opt}
               </button>
             ))}
-            {/* Невидимый элемент в конце для фокуса скролла */}
-            <div ref={listEndRef} />
+            {/* Распорка для корректного скролла до самого низа */}
+            <div ref={listEndRef} className="h-10 w-full" />
           </div>
         </>
       )}
@@ -120,81 +138,42 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
   );
 };
 
-const HomePage = ({ setPage }: any) => (
-  <div className="page-container py-12 sm:py-20">
-    <div className="text-center mb-20">
-      <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6">{RU.home.title} <span className="text-[#FDB913]">{RU.home.accent}</span></h1>
-      <p className="text-base sm:text-lg text-[#9CA3AF] mb-8 max-w-2xl mx-auto">{RU.home.sub}</p>
-      <button onClick={() => setPage('sell')} className="btn-primary px-8 py-4 mx-auto text-lg">{RU.home.btn} <span>→</span></button>
-    </div>
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-20">
-      {RU.home.steps.map(s => (
-        <div key={s.n} className="text-center">
-          <div className="step-number">{s.n}</div>
-          <h3 className="font-semibold mb-2">{s.t}</h3>
-          <p className="text-sm text-[#6B7280]">{s.d}</p>
-        </div>
-      ))}
-    </div>
-    <div className="card-dark grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-      {RU.home.features.map((f, i) => (
-        <div key={i} className="feature-card">
-          <div className="text-4xl mb-3">{f.i}</div>
-          <h3 className="font-semibold mb-2">{f.t}</h3>
-          <p className="text-sm text-[#6B7280]">{f.d}</p>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
 const SellPage = () => {
   const networks = RU.sell.networks.map(n => n.display);
   const networkAliases: any = RU.sell.networks.reduce((acc, n) => ({...acc, [n.display]: n.aliases}), {});
-const assetsMap: any = { 
-  // Основные: TON и USDT. Доп: Notcoin (NOT) и Dogs (DOGS) — лидеры экосистемы
-  'TON (The Open Network)': ['USDT', 'TON', 'NOT', 'DOGS'], 
   
-  // Основные: TRX и USDT. Доп: USDC и стабильный стейблкоин USDD
-  'Tron (TRC20)': ['USDT', 'TRX', 'USDC', 'USDD'], 
-  
-  // Основные: ETH и USDT. Доп: USDC и обернутый биткоин (WBTC)
-  'Ethereum (ERC20)': ['USDT', 'ETH', 'USDC', 'WBTC', 'LINK'], 
-  
-  // Основные: BNB и USDT. Доп: FDUSD (основной стейбл Бинанса), CAKE и TWT
-  'BNB Smart Chain (BEP20)': ['USDT', 'BNB', 'FDUSD', 'CAKE', 'TWT'] 
-};
+  const assetsMap: any = { 
+    'TON (The Open Network)': ['TON', 'USDT', 'NOT', 'DOGS'], 
+    'Tron (TRC20)': ['USDT', 'TRX', 'USDC', 'USDD'], 
+    'Ethereum (ERC20)': ['ETH', 'USDT', 'USDC', 'WBTC', 'LINK'], 
+    'BNB Smart Chain (BEP20)': ['BNB', 'USDT', 'FDUSD', 'CAKE', 'TWT'] 
+  };
   
   const [network, setNetwork] = useState(networks[0]);
-  const [asset, setAsset] = useState('USDT');
+  const [asset, setAsset] = useState(assetsMap[networks[0]][0]);
   const [method, setMethod] = useState(RU.sell.methods[0]);
   const [bank, setBank] = useState('');
   const [amount, setAmount] = useState('');
   const [details, setDetails] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Получаем конфиг текущего метода из локализации
-  const currentMethodConfig = (RU.sell.methodConfigs as any)[method];
+  const currentConfig = (RU.sell.methodConfigs as any)[method];
 
-  // Логика валидации (остается в коде, так как это бизнес-логика)
-  const validateDetails = () => {
+  const validate = () => {
     const d = details.replace(/\s/g, '');
+    const isSbp = method.includes('СБП');
     if (method === 'Карта РФ') return d.length === 16;
     if (method === 'ЮMoney') return d.length >= 5;
-    return d.length >= 10; // Для СБП и Мобильных
+    return d.length >= 10 && (isSbp ? bank !== '' : true);
   };
 
-  const isValid = Number(amount) > 0 && validateDetails() && (method.includes('СБП') ? bank !== '' : true);
+  const isValid = Number(amount) > 0 && validate();
 
   const handleCreateOrder = async () => {
     setLoading(true);
-    const result = await Api.createOrder({ network, asset, method, amount, details, bank: method.includes('СБП') ? bank : null });
-    if (result.success) {
-      alert("Заявка создана!");
-      setAmount(''); setDetails('');
-    } else {
-      alert(result.message);
-    }
+    const res = await Api.createOrder({ network, asset, method, amount, details, bank: method.includes('СБП') ? bank : null });
+    alert(res.success ? "Заявка успешно создана!" : res.message);
+    if (res.success) { setAmount(''); setDetails(''); }
     setLoading(false);
   };
 
@@ -209,29 +188,21 @@ const assetsMap: any = {
           </div>
           <div>
             <label className="label">{RU.sell.labels.asset}</label>
-            <SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network] || ['USDT']} />
+            <SearchableDropdown value={asset} onChange={setAsset} options={assetsMap[network]} />
           </div>
           <div>
             <label className="label">{RU.sell.labels.method}</label>
             <SearchableDropdown value={method} onChange={(v: string) => { setMethod(v); setDetails(''); }} options={RU.sell.methods} />
           </div>
         </div>
-        
         <div className={`grid grid-cols-1 ${method.includes('СБП') ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
           <div>
             <label className="label">{RU.sell.labels.amount} {asset}</label>
-            <input 
-              type="text" inputMode="decimal" placeholder="0.00" 
-              className="input-base text-lg font-bold"
-              value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} 
-            />
+            <input type="text" placeholder="0.00" className="input-base font-bold text-lg" value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} />
           </div>
           <div>
-            <label className="label">{currentMethodConfig.label}</label>
-            <input 
-              type="text" placeholder={currentMethodConfig.placeholder} className="input-base"
-              value={details} onChange={(e) => setDetails(e.target.value)}
-            />
+            <label className="label">{currentConfig.label}</label>
+            <input type="text" placeholder={currentConfig.placeholder} className="input-base" value={details} onChange={e => setDetails(e.target.value)} />
           </div>
           {method.includes('СБП') && (
             <div>
@@ -240,105 +211,61 @@ const assetsMap: any = {
             </div>
           )}
         </div>
-
         <button 
-          onClick={handleCreateOrder} disabled={!isValid || loading}
-          className={`btn-secondary md:w-96 mx-auto flex items-center justify-center gap-3 ${(!isValid || loading) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
+          onClick={handleCreateOrder} 
+          disabled={!isValid || loading} 
+          className={`btn-secondary md:w-96 mx-auto flex items-center justify-center gap-3 ${(!isValid || loading) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
         >
-          {loading ? <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />{RU.common.loading}</> : RU.sell.submitBtn}
+          {loading ? RU.common.loading : RU.sell.submitBtn}
         </button>
       </div>
     </div>
   );
 };
 
-const ProfilePage = ({ setPage }: any) => {
-  const [tab, setTab] = useState('all');
-  return (
-    <div className="page-container py-12">
-      <div className="warning-banner">
-        <span className="text-2xl">🔒</span>
-        <p className="text-sm">{RU.common.saveIncognito}</p>
-      </div>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">{RU.profile.title}</h1>
-        <button onClick={() => setPage('sell')} className="btn-primary">{RU.profile.createBtn}</button>
-      </div>
-      <div className="tabs-container mb-8">
-        {['all', 'active', 'completed'].map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`btn-tab ${tab === t ? 'btn-tab-active' : 'btn-tab-inactive'}`}>
-            {t === 'all' ? RU.profile.tabs.all : t === 'active' ? RU.profile.tabs.active : RU.profile.tabs.completed}
-          </button>
-        ))}
-      </div>
-      <div className="empty-state">
-        <div className="empty-icon"><span className="text-4xl">📋</span></div>
-        <p className="text-[#9CA3AF]">{RU.profile.empty}</p>
-      </div>
-    </div>
-  );
-};
-
-const RewardsPage = () => (
-  <div className="page-container py-12">
-    <h1 className="text-3xl font-bold mb-8">{RU.rewards.title}</h1>
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
-      {RU.rewards.stats.map((s, i) => (
-        <div key={i} className="stat-card">
-          <div className="stat-icon">{s.i}</div>
-          <div className="stat-value">{s.v}</div>
-          <div className="stat-label">{s.l}</div>
-        </div>
-      ))}
-    </div>
-    <div className="card-dark space-y-4">
-      <h2 className="text-xl font-bold mb-6">{RU.rewards.subtitle}</h2>
-      {RU.rewards.items.map((r, i) => (
-        <div key={i} className="reward-card">
-          <div className="flex items-center gap-4">
-            <div className="reward-icon">🔒</div>
-            <div><div className="font-semibold">{r.t}</div><div className="text-sm text-[#6B7280]">{r.d}</div></div>
-          </div>
-          <div className="reward-points">+{r.p}</div>
+const HomePage = ({ setPage }: any) => (
+  <div className="page-container py-20 text-center">
+    <h1 className="text-5xl font-bold mb-6">{RU.home.title} <span className="text-[#FDB913]">{RU.home.accent}</span></h1>
+    <p className="text-lg text-[#9CA3AF] mb-10 max-w-2xl mx-auto">{RU.home.sub}</p>
+    <button onClick={() => setPage('sell')} className="btn-primary px-10 py-4 text-xl">{RU.home.btn}</button>
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-20">
+      {RU.home.steps.map(s => (
+        <div key={s.n} className="p-6 bg-[#1a1f26] rounded-2xl">
+          <div className="text-[#FDB913] text-2xl font-bold mb-2">{s.n}</div>
+          <h3 className="font-bold mb-2">{s.t}</h3>
+          <p className="text-sm text-[#6B7280]">{s.d}</p>
         </div>
       ))}
     </div>
   </div>
 );
 
-const AuthPage = () => {
-  const [mode, setMode] = useState('login');
-  return (
-    <div className="page-container py-20 max-w-md mx-auto">
-      <div className="tabs-container mb-8">
-        <button onClick={() => setMode('login')} className={`btn-tab ${mode === 'login' ? 'btn-tab-active' : 'btn-tab-inactive'}`}>{RU.auth.tabs.login}</button>
-        <button onClick={() => setMode('register')} className={`btn-tab ${mode === 'register' ? 'btn-tab-active' : 'btn-tab-inactive'}`}>{RU.auth.tabs.register}</button>
-      </div>
-      <div className="card-dark space-y-4">
-        <input type="email" placeholder="Email" className="input-base" />
-        <input type="password" placeholder={RU.auth.placeholders.pass} className="input-base" />
-        {mode === 'register' && <input type="password" placeholder={RU.auth.placeholders.passConfirm} className="input-base" />}
-        <button className="btn-primary w-full py-4 mt-4">{mode === 'login' ? RU.auth.tabs.login : RU.auth.tabs.register}</button>
-      </div>
+const ProfilePage = () => (
+  <div className="page-container py-12">
+    <h1 className="text-3xl font-bold mb-8">{RU.profile.title}</h1>
+    <div className="empty-state p-20 text-center bg-[#1a1f26] rounded-3xl border-2 border-dashed border-[#2a3040]">
+       <p className="text-[#9CA3AF]">{RU.profile.empty}</p>
     </div>
-  );
-};
+  </div>
+);
 
 const App = () => {
   const [page, setPage] = useState<Page>(() => {
     const s = localStorage.getItem('currentPage');
     return (s && PAGES.includes(s as Page)) ? (s as Page) : 'home';
   });
+  
   useEffect(() => { localStorage.setItem('currentPage', page); }, [page]);
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-[#FDB913] selection:text-black">
       <Navbar page={page} setPage={setPage} />
-      <main className="pt-20">
+      <main className="pt-16">
         {page === 'home' && <HomePage setPage={setPage} />}
         {page === 'sell' && <SellPage />}
-        {page === 'profile' && <ProfilePage setPage={setPage} />}
-        {page === 'rewards' && <RewardsPage />}
-        {page === 'auth' && <AuthPage />}
+        {page === 'profile' && <ProfilePage />}
+        {page === 'rewards' && <div className="page-container py-12"><h1 className="text-3xl font-bold">{RU.rewards.title}</h1></div>}
+        {page === 'auth' && <div className="page-container py-12"><h1 className="text-3xl font-bold">{RU.auth.tabs.login}</h1></div>}
       </main>
     </div>
   );
