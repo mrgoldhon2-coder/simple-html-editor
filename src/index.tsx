@@ -9,8 +9,10 @@ type Page = typeof PAGES[number];
 
 /**
  * ВЫПАДАЮЩИЙ СПИСОК
- * Поведение: При клике инпут прыгает наверх, скролл страницы блокируется.
- * Создается эффект "модального окна" для списка.
+ * Реализация "Модального" поведения:
+ * 1. Фиксирует скролл при открытии.
+ * 2. Принудительно прыгает к инпуту в самый верх.
+ * 3. Возвращает скролл на место при закрытии.
  */
 const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выберите...', allowCustom = false, aliases = {} }: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,38 +32,51 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
 
   useEffect(() => {
     if (isOpen) {
-      // Сохраняем текущий скролл
-      scrollPosBeforeOpen.current = window.pageYOffset;
+      // 1. Запоминаем текущую позицию
+      scrollPosBeforeOpen.current = window.pageYOffset || document.documentElement.scrollTop;
       
-      // Блокируем скролл страницы
+      // 2. Блокируем скролл всего body
       document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
+      document.body.style.height = '100vh';
 
-      const timer = setTimeout(() => {
+      // 3. Поднимаем инпут наверх с небольшим таймаутом для рендера
+      setTimeout(() => {
         if (dropdownRef.current) {
-          // Поднимаем инпут к самому верху (block: 'start')
-          dropdownRef.current.scrollIntoView({ 
-            behavior: 'auto', 
-            block: 'start' 
+          const rect = dropdownRef.current.getBoundingClientRect();
+          const absoluteTop = rect.top + window.pageYOffset;
+          window.scrollTo({
+            top: absoluteTop - 20, // Оставляем 20px сверху
+            behavior: 'auto'
           });
-          // Небольшой отступ от самого края (например 20px)
-          window.scrollBy(0, -20);
         }
-      }, 50);
-      return () => clearTimeout(timer);
+      }, 30);
     } else {
-      // Разблокируем скролл
+      // 4. Возвращаем всё назад
       document.body.style.overflow = '';
-      document.body.style.touchAction = '';
+      document.body.style.height = '';
+      
+      // Возвращаемся к запомненной позиции
+      window.scrollTo({
+        top: scrollPosBeforeOpen.current,
+        behavior: 'auto'
+      });
     }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.height = '';
+    };
   }, [isOpen]);
 
   useEffect(() => { if (!isOpen) { setInputValue(value); setPreviousValue(value); } }, [value, isOpen]);
 
   const handleSelect = (opt: string) => {
     isSelectionMade.current = true;
-    setInputValue(opt); setPreviousValue(opt); onChange(opt);
-    setSearch(''); setIsOpen(false);
+    setInputValue(opt); 
+    setPreviousValue(opt); 
+    onChange(opt);
+    setSearch(''); 
+    setIsOpen(false);
   };
 
   const handleBlur = () => {
@@ -69,7 +84,8 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
       if (isSelectionMade.current) { isSelectionMade.current = false; setIsOpen(false); return; }
       if (!inputValue || (!options.includes(inputValue) && !allowCustom)) setInputValue(previousValue);
       else { onChange(inputValue); setPreviousValue(inputValue); }
-      setIsOpen(false); setSearch('');
+      setIsOpen(false); 
+      setSearch('');
     }, 200);
   };
 
@@ -80,22 +96,21 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
         onChange={e => { isSelectionMade.current = false; setSearch(e.target.value); setInputValue(e.target.value); setIsOpen(true); }}
         onFocus={() => { isSelectionMade.current = false; setPreviousValue(inputValue); setSearch(''); setInputValue(''); setIsOpen(true); }}
         onBlur={handleBlur} placeholder={placeholder} 
-        className={`input-base ${isOpen ? 'relative z-[150] border-[#FDB913]' : ''}`}
+        className={`input-base ${isOpen ? 'relative z-[200] border-[#FDB913]' : ''}`}
       />
       {isOpen && (
         <>
-          {/* Затемнение фона, которое перекрывает всё кроме инпута и списка */}
           <div 
-            className="fixed inset-0 bg-black/80 z-[140] backdrop-blur-sm" 
+            className="fixed inset-0 bg-black/85 z-[190] backdrop-blur-md" 
             onMouseDown={e => e.preventDefault()} 
           />
-          <div className="absolute z-[150] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-2xl shadow-2xl max-h-[350px] overflow-y-auto overscroll-contain">
+          <div className="absolute z-[200] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-2xl shadow-2xl max-h-[320px] overflow-y-auto overscroll-contain">
             {filtered.length > 0 ? filtered.map((opt: string, i: number) => (
               <button 
                 key={i} 
                 type="button" 
                 onMouseDown={() => handleSelect(opt)} 
-                className="w-full text-left px-5 py-5 hover:bg-[#2a3040] text-sm border-b border-white/5 last:border-b-0 active:bg-[#FDB913] active:text-black transition-colors"
+                className="w-full text-left px-5 py-5 hover:bg-[#2a3040] text-sm border-b border-white/5 last:border-b-0 active:bg-[#FDB913] active:text-black"
               >
                 {opt}
               </button>
@@ -107,9 +122,6 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
   );
 };
 
-/**
- * НАВБАР (Обычный элемент в топе страницы)
- */
 const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   return (
@@ -117,7 +129,7 @@ const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) =
       <div className="page-container h-16 flex items-center justify-between">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setPage('home')}>
           <div className="logo font-black text-[#FDB913]">P2P</div>
-          <span className="font-bold text-white uppercase text-sm tracking-tight">{RU.common.exchangeName}</span>
+          <span className="font-bold text-white uppercase text-sm">{RU.common.exchangeName}</span>
         </div>
         <div className="hidden md:flex items-center gap-6">
           {RU.nav.map(l => (
@@ -233,7 +245,7 @@ const RewardsPage = () => (
       {RU.rewards.stats.map((s, i) => (
         <div key={i} className="p-8 bg-[#1a1f26] rounded-3xl border border-white/5">
           <div className="text-3xl mb-2">{s.i}</div>
-          <div className="text-sm text-[#6B7280] font-bold uppercase mb-1 tracking-widest">{s.l}</div>
+          <div className="text-sm text-[#6B7280] font-bold uppercase mb-1">{s.l}</div>
           <div className="text-2xl font-bold text-white">{s.v}</div>
         </div>
       ))}
@@ -254,12 +266,11 @@ const RewardsPage = () => (
 
 const App = () => {
   const [page, setPage] = useState<Page>(() => (localStorage.getItem('currentPage') as Page) || 'home');
-  useEffect(() => { localStorage.setItem('currentPage', page); window.scrollTo(0, 0); }, [page]);
+  useEffect(() => { localStorage.setItem('currentPage', page); if (!document.body.style.overflow) window.scrollTo(0, 0); }, [page]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-[#FDB913] selection:text-black font-sans">
+    <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-[#FDB913] selection:text-black">
       <Navbar page={page} setPage={setPage} />
-      
       <main className="pb-24">
         {page === 'home' && <HomePage setPage={setPage} />}
         {page === 'sell' && <SellPage />}
@@ -267,7 +278,7 @@ const App = () => {
         {page === 'rewards' && <RewardsPage />}
         {page === 'auth' && (
           <div className="page-container py-12 flex justify-center">
-            <div className="card-dark w-full max-w-md p-10 bg-[#1a1f26] rounded-3xl border border-white/5">
+            <div className="card-dark w-full max-w-md p-10 bg-[#1a1f26] rounded-3xl">
               <h2 className="text-2xl font-bold mb-8 text-center text-white uppercase tracking-tighter">Login</h2>
               <div className="space-y-4">
                 <input className="input-base" placeholder="Email" />
@@ -278,7 +289,6 @@ const App = () => {
           </div>
         )}
       </main>
-      
       <footer className="py-12 border-t border-[#1a1f26] text-center text-xs text-[#4B5563] tracking-widest uppercase">
         <p>© 2026 {RU.common.exchangeName} • {RU.common.saveIncognito}</p>
       </footer>
