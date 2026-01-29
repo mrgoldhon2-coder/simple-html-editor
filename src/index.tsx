@@ -16,8 +16,8 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
   const [inputValue, setInputValue] = useState(value);
   const [previousValue, setPreviousValue] = useState(value);
   const isSelectionMade = useRef(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listEndRef = useRef<HTMLDivElement>(null);
+  
+  const dropdownRef = useRef<HTMLDivElement>(null); // Реф на весь компонент
 
   const filtered = options.filter((opt: string) => {
     const s = search.toLowerCase().replace(/-/g, '');
@@ -26,13 +26,18 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
     return o.includes(s) || a;
   });
 
+  // Листаем СТРАНИЦУ к компоненту, когда список открыт
   useEffect(() => {
-    if (isOpen && filtered.length > 0) {
+    if (isOpen) {
+      // requestAnimationFrame гарантирует, что список уже отрисован
       requestAnimationFrame(() => {
-        listEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'center' });
+        dropdownRef.current?.scrollIntoView({ 
+          behavior: 'auto', 
+          block: 'center' // Выталкивает весь блок в центр экрана (выше клавиатуры)
+        });
       });
     }
-  }, [isOpen, filtered.length]);
+  }, [isOpen]);
 
   useEffect(() => { if (!isOpen) { setInputValue(value); setPreviousValue(value); } }, [value, isOpen]);
 
@@ -52,9 +57,9 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
   };
 
   return (
-    <div className="relative w-full">
+    <div ref={dropdownRef} className="relative w-full">
       <input
-        ref={inputRef} type="text" value={isOpen ? search : inputValue}
+        type="text" value={isOpen ? search : inputValue}
         onChange={e => { isSelectionMade.current = false; setSearch(e.target.value); setInputValue(e.target.value); setIsOpen(true); }}
         onFocus={() => { isSelectionMade.current = false; setPreviousValue(inputValue); setSearch(''); setInputValue(''); setIsOpen(true); }}
         onBlur={handleBlur} placeholder={placeholder} className={`input-base ${isOpen ? 'relative z-[70]' : ''}`}
@@ -64,9 +69,16 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
           <div className="fixed inset-0 bg-black/50 z-[60]" onMouseDown={e => e.preventDefault()} />
           <div className="absolute z-[70] w-full mt-2 bg-[#1a1f26] border-2 border-[#FDB913] rounded-xl shadow-xl max-h-60 overflow-y-auto">
             {filtered.map((opt: string, i: number) => (
-              <button key={i} type="button" onMouseDown={() => handleSelect(opt)} className="w-full text-left px-4 py-3 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0">{opt}</button>
+              <button 
+                key={i} 
+                type="button" 
+                onMouseDown={() => handleSelect(opt)} 
+                className="w-full text-left px-4 py-3 hover:bg-[#2a3040] text-sm border-b border-[#2a3040] last:border-b-0"
+              >
+                {opt}
+              </button>
             ))}
-            <div ref={listEndRef} className="h-px w-full -mt-px" />
+            {/* Внутренний маяк удален, чтобы список не листался внутри */}
           </div>
         </>
       )}
