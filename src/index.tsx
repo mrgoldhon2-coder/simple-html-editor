@@ -49,8 +49,11 @@ const SearchableDropdown = ({
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [inputValue, setInputValue] = useState(value);
-  const [previousValue, setPreviousValue] = useState(value); 
-  const [autoSelected, setAutoSelected] = useState(false); 
+  const [previousValue, setPreviousValue] = useState(value);
+  
+  // Используем Ref для флага, так как он меняется МГНОВЕННО и доступен в handleBlur без задержек стейта
+  const isSelectionMade = useRef(false);
+  
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -65,35 +68,42 @@ const SearchableDropdown = ({
     }
   }, [value, isOpen]);
 
+  // Следим за автовыбором (3 буквы и 1 совпадение)
   useEffect(() => {
     if (filtered.length === 1 && search.length >= 3) {
       const selected = filtered[0];
-      setAutoSelected(true); 
+      
+      // Сначала ставим флаг, потом вызываем блюр
+      isSelectionMade.current = true;
+      
       setInputValue(selected);
-      setPreviousValue(selected); // Фикс: обновляем старое значение сразу, чтобы blur его не вернул
+      setPreviousValue(selected);
       onChange(selected);
       setSearch('');
       setIsOpen(false);
+      
+      // Вызываем потерю фокуса программно
       inputRef.current?.blur();
     }
   }, [filtered, search, onChange]);
 
   const handleInputChange = (val: string) => {
+    isSelectionMade.current = false; // Если начали печатать, сбрасываем флаг
     setSearch(val);
     setInputValue(val);
     setIsOpen(true);
-    setAutoSelected(false);
   };
 
   const handleFocus = () => {
+    isSelectionMade.current = false;
     setPreviousValue(inputValue);
     setSearch('');
-    setInputValue(''); 
+    setInputValue('');
     setIsOpen(true);
-    setAutoSelected(false);
   };
 
   const handleSelect = (opt: string) => {
+    isSelectionMade.current = true; // Метка, что выбор сделан вручную
     setInputValue(opt);
     setPreviousValue(opt);
     onChange(opt);
@@ -102,29 +112,25 @@ const SearchableDropdown = ({
   };
 
   const handleBlur = () => {
+    // Даем небольшую паузу для обработки кликов по списку
     setTimeout(() => {
-      // Если сработал автовыбор, ничего не откатываем
-      if (autoSelected) {
-        setAutoSelected(false);
-        setSearch('');
+      // Если выбор был сделан (через клик или автовыбор), ничего не откатываем
+      if (isSelectionMade.current) {
         setIsOpen(false);
+        setSearch('');
         return;
       }
-      
-      // Если поле пустое — возвращаем как было
-      if (!inputValue) {
+
+      // Если мы просто кликнули «в сторону» (не выбрав ничего)
+      if (!inputValue || (!options.includes(inputValue) && !allowCustom)) {
+        // Возвращаем старое значение
         setInputValue(previousValue);
-      } 
-      // Если ввели что-то, чего нет в списке (и кастомные значения запрещены) — возвращаем как было
-      else if (!allowCustom && !options.includes(inputValue)) {
-        setInputValue(previousValue);
-      } 
-      // Если значение валидно и изменилось — сохраняем
-      else if (inputValue !== previousValue) {
+      } else {
+        // Если ввели кастомное значение и оно разрешено
         onChange(inputValue);
         setPreviousValue(inputValue);
       }
-      
+
       setIsOpen(false);
       setSearch('');
     }, 200);
