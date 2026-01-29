@@ -9,7 +9,7 @@ type Page = typeof PAGES[number];
 
 /**
  * ВЫПАДАЮЩИЙ СПИСОК
- * Исправлено: Скролл до 5-го элемента с небольшим отступом снизу
+ * Исправлено: Скролл гарантирует видимость 5 элементов + запас
  */
 const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выберите...', allowCustom = false, aliases = {} }: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,13 +30,21 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
     if (isOpen && filtered.length > 0) {
       const timer = setTimeout(() => {
         if (dropdownRef.current) {
-          // Прокручиваем к элементу так, чтобы он был виден полностью
-          dropdownRef.current.scrollIntoView({ 
-            behavior: 'auto', 
-            block: 'end' 
+          // Получаем координаты инпута
+          const rect = dropdownRef.current.getBoundingClientRect();
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+          
+          // Вычисляем позицию: верх инпута + высота инпута + высота выпадающего списка (240px для max-h-60)
+          // Прокручиваем так, чтобы весь этот блок был в поле зрения
+          const targetY = rect.top + scrollTop - 20; 
+
+          window.scrollTo({
+            top: targetY,
+            behavior: 'auto'
           });
-          // Добавляем небольшой отступ снизу, чтобы 5-й элемент не обрезался
-          window.scrollBy(0, 80);
+          
+          // Дополнительный сдвиг, чтобы 5-й элемент (высота ~48px каждый) точно влез
+          window.scrollBy(0, 150);
         }
       }, 100);
       return () => clearTimeout(timer);
@@ -86,8 +94,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder = 'Выбе�
 };
 
 /**
- * НАВБАР
- * Исправлено: Теперь он НЕ фиксированный, а просто в потоке страницы
+ * НАВБАР (НЕ фиксированный)
  */
 const Navbar = ({ page, setPage }: { page: Page; setPage: (p: Page) => void }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
